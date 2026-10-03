@@ -1,0 +1,17 @@
+{
+  "version": "1.2.2",
+  "copyright": "Copyright (c) 2026 RAINDAYS121",
+  "license": "GPL-3.0-only",
+  "regressions_passed": 114,
+  "regressions_failed": 0,
+  "source_rebuild": "independently extracted, rebuilt and verified locally",
+  "scope": "fake backends, hidden control paint, managed events and pure scroll/layout geometry; prior own off-desktop native rendering",
+  "physical_input_tested": false,
+  "actual_game_tested": false,
+  "anticheat_compatibility_confirmed": false,
+  "contains_raw_host_diagnostics": false,
+  "source_rebuild_checks_passed": 114,
+  "source_rebuild_checks_failed": 0,
+  "deterministic_binary_reproduction_claimed": false,
+  "remote_publication_verified": false
+}

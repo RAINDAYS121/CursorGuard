@@ -1,0 +1,32 @@
+# Copyright (c) 2026 RAINDAYS121. SPDX-License-Identifier: GPL-3.0-only
+name: Build and verify
+on:
+  push:
+    branches: [main]
+    tags: ['v*']
+  pull_request:
+  workflow_dispatch:
+permissions:
+  contents: read
+jobs:
+  verify:
+    runs-on: windows-latest
+    timeout-minutes: 15
+    steps:
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+        with:
+          persist-credentials: false
+      - name: Build, verify and package
+        shell: powershell
+        run: |
+          $ErrorActionPreference = 'Stop'
+          .\build.ps1
+          .\verify.ps1
+          .\package.ps1
+      - name: Independently rebuild source package
+        shell: powershell
+        run: |
+          $ErrorActionPreference = 'Stop'
+          Expand-Archive -LiteralPath .\release\CursorGuard-1.2.2-source.zip -DestinationPath .\ci-rebuild
+          .\ci-rebuild\CursorGuard-1.2.2-source\build.ps1
+          .\ci-rebuild\CursorGuard-1.2.2-source\verify.ps1
