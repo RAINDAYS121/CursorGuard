@@ -6,7 +6,15 @@ $verifyExe=Join-Path $verifyRoot 'CursorGuard.exe'
 if(-not (Test-Path -LiteralPath $verifyExe)) {throw 'Run build.ps1 first.'}
 $testOutput=Join-Path $verifyRoot 'test-results.json'
 $testProcess=Start-Process -FilePath $verifyExe -ArgumentList ('--self-test "'+$testOutput+'"') -WindowStyle Hidden -Wait -PassThru
-if($testProcess.ExitCode -ne 0) {throw 'Simulation tests failed.'}
+if($testProcess.ExitCode -ne 0) {
+  if(Test-Path -LiteralPath $testOutput) {
+    $failedReport=Get-Content -LiteralPath $testOutput -Raw -Encoding UTF8 | ConvertFrom-Json
+    foreach($section in $failedReport.PSObject.Properties) {
+      foreach($check in @($section.Value)) {if($null -ne $check.passed -and $check.passed -eq $false) {Write-Output ('Failed case: '+$check.name+' : '+$check.error)}}
+    }
+  }
+  throw 'Simulation tests failed.'
+}
 $report=Get-Content -LiteralPath $testOutput -Raw -Encoding UTF8 | ConvertFrom-Json
 if($report.failed -ne 0) {throw 'Report contains failed tests.'}
 $previewOutput=Join-Path $verifyRoot 'artifacts\validation-previews\zh-CN'
