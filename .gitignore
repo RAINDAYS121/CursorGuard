@@ -1,0 +1,31 @@
+# Build and verification outputs
+*.exe
+*.pdb
+*.zip
+test-results.json
+verification.json
+SHA256SUMS.txt
+release/
+bin/
+obj/
+# Personal state, transient diagnostics and editor files
+settings.json
+floating.json
+*.log
+*.tmp
+*.bak
+.vs/
+.vscode/
+# Keep tracked runtime config, source icon assets and illustrative previews.
+
+# Public repository privacy and local verification scratch
+.library*/
+.env
+.env.*
+*.token
+*.key
+*.pem
+*.jsonl
+native-probe*/
+docs/NATIVE-VERIFICATION-*.json
+ci-rebuild/
