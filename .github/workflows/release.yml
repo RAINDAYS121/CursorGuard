@@ -59,7 +59,7 @@ jobs:
           name: verified-v1.2.3-${{ github.sha }}
           path: release
       - name: Publish exact commit and checked assets
-        shell: powershell
+        shell: pwsh
         env:
           RELEASE_TOKEN: ${{ github.token }}
         run: .\scripts\publish-release.ps1

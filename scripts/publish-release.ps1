@@ -16,24 +16,13 @@ function Read-ReleaseApi([string]$path,[bool]$allow404=$false) {
   catch {if($allow404 -and $_.Exception.Response -and [int]$_.Exception.Response.StatusCode -eq 404) {return $null};throw 'GitHub read failed. No speculative write will be attempted.'}
 }
 function Write-ReleaseApi([string]$path,[string]$method,[object]$body) {
-  try {return Invoke-RestMethod -Uri ($api+$path) -Headers $headers -Method $method -ContentType 'application/json; charset=utf-8' -Body ([Text.Encoding]::UTF8.GetBytes(($body | ConvertTo-Json -Depth 6)))}
-  catch {
-    $failure=$_
-    $status='unavailable';if($failure.Exception.Response) {$status=[int]$failure.Exception.Response.StatusCode}
+  try {$response=Invoke-WebRequest -Uri ($api+$path) -Headers $headers -Method $method -ContentType 'application/json; charset=utf-8' -Body ([Text.Encoding]::UTF8.GetBytes(($body | ConvertTo-Json -Depth 6))) -SkipHttpErrorCheck -TimeoutSec 60}
+  catch {throw ('GitHub publication transport failed ('+$method+' '+$path+'). Inspect the remote result before retrying; existing assets are never deleted.')}
+  $status=[int]$response.StatusCode
+  if($status -lt 200 -or $status -ge 300) {
     $serverMessage='No server message'
-    $errorText=[string]$failure.ErrorDetails.Message
     $errorBody=$null
-    try {$errorBody=$errorText | ConvertFrom-Json} catch {}
-    if($null -eq $errorBody -and $failure.Exception.Response) {
-      try {
-        $response=$failure.Exception.Response
-        if($response.PSObject.Methods['GetResponseStream']) {
-          $reader=New-Object IO.StreamReader($response.GetResponseStream())
-          try {$errorText=$reader.ReadToEnd()} finally {$reader.Dispose()}
-        } elseif($response.Content) {$errorText=$response.Content.ReadAsStringAsync().GetAwaiter().GetResult()}
-        $errorBody=$errorText | ConvertFrom-Json
-      } catch {}
-    }
+    try {$errorBody=[string]$response.Content | ConvertFrom-Json} catch {}
     if($errorBody.message) {$serverMessage=[string]$errorBody.message}
     foreach($validation in @($errorBody.errors)) {
       $fields=@()
@@ -44,6 +33,7 @@ function Write-ReleaseApi([string]$path,[string]$method,[object]$body) {
     if($serverMessage.Length -gt 600) {$serverMessage=$serverMessage.Substring(0,600)}
     throw ('GitHub publication request failed ('+$method+' '+$path+', HTTP '+$status+'): '+$serverMessage+'. Inspect the remote result before retrying; existing assets are never deleted.')
   }
+  try {return [string]$response.Content | ConvertFrom-Json} catch {throw 'Unexpected GitHub publication response. Inspect the remote result before retrying.'}
 }
 function Tag-Commit {
   $ref=Read-ReleaseApi ('/git/ref/tags/'+$tag) $true
@@ -86,7 +76,9 @@ if($null -ne $commit -and $commit -ne $env:GITHUB_SHA) {throw 'Existing tag poin
 $release=Find-Release
 if($null -eq $release) {
   # A draft is kept unpublished until all three assets have verified hashes.
-  $notes=Get-Content -LiteralPath (Join-Path $publishRoot 'RELEASE_NOTES.md') -Raw -Encoding UTF8
+  # Read a plain string: Windows PowerShell can serialize Get-Content's
+  # attached provider properties as an object rather than a JSON string.
+  $notes=[IO.File]::ReadAllText((Join-Path $publishRoot 'RELEASE_NOTES.md'),[Text.Encoding]::UTF8)
   $release=Write-ReleaseApi '/releases' 'Post' @{tag_name=$tag;target_commitish=$env:GITHUB_SHA;name='CursorGuard 1.2.3';body=$notes;draft=$true;prerelease=$false;make_latest='false'}
 } elseif($null -eq $commit -and $release.target_commitish -ne $env:GITHUB_SHA) {throw 'Existing draft targets a different commit.'}
 if($release.tag_name -ne $tag) {throw 'Unexpected release tag.'}
