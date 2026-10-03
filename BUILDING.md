@@ -52,3 +52,26 @@ For an independent check, extract `release/CursorGuard-1.2.3-source.zip` into a 
 ## Manual validation / 人工检查
 
 Follow [docs/VALIDATION.md](docs/VALIDATION.md) after finishing the game and exiting the older tool normally. Check language restoration, native dropdown/file-picker/tray interaction, dragging, real DPI changes and game/fullscreen behavior separately. Simulations do not establish game or anti-cheat compatibility.
+
+## Authorized release workflow
+
+The dedicated release workflow accepts only main-branch pushes changing
+`.github/release-request.json` or manual dispatch on main. It has no PR trigger.
+Preparation keeps `contents: read`, builds and tests, packages and independently
+rebuilds the corresponding source ZIP. Only the separate publish job has
+`contents: write`, using its temporary GITHUB_TOKEN without stored credentials.
+It publishes v1.2.3 for the exact run commit after verifying the three assets,
+then downloads each public attachment and checks SHA-256. Mismatching existing
+tags/assets are refused, never replaced or deleted. Ordinary CI stays read-only.
+
+## License and distribution / 许可与发行
+
+Project code and original icons are GPL-3.0-only; see the full [LICENSE](LICENSE)
+and [third-party notices](THIRD_PARTY_NOTICES.md). Copyright © 2026 RAINDAYS121.
+The repository is [RAINDAYS121/CursorGuard](https://github.com/RAINDAYS121/CursorGuard).
+Portable packages include complete corresponding source; source-only packages
+and SHA-256 checksums accompany them. GitHub Releases records publication status.
+Detailed test scope and limits are in [docs/VALIDATION.md](docs/VALIDATION.md).
+
+项目代码和原创图标采用 GPLv3（仅第 3 版），版权归 RAINDAYS121（2026）。
+完整许可及第三方说明见上方链接；发行包附对应源码和 SHA-256，详细验证范围见验证文档。

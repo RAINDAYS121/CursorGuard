@@ -76,8 +76,4 @@ Windows 10/11 桌面工具：仅在你选择的程序处于真实前台时，将
 
 ## 开发与许可
 
-使用系统自带 .NET Framework 编译器；无 NuGet 包或外部运行时捆绑。构建、模拟测试及预览见 [BUILDING.md](BUILDING.md)。项目代码和原创图标采用 **GPL-3.0-only**，完整文本见 [LICENSE](LICENSE)，第三方情况见 [THIRD_PARTY_NOTICES.md](THIRD_PARTY_NOTICES.md)。项目版权署名为 **RAINDAYS121（2026）**，仓库目标为 [RAINDAYS121/CursorGuard](https://github.com/RAINDAYS121/CursorGuard)。程序包、对应完整源码包及 SHA-256 校验按 `v1.2.3` 提供，发布状态以 GitHub Releases 为准。
-
-1.2.3 通过 132 项自动检查，其中 18 项覆盖语言保存、兼容、切换、保存失败回退与四种缩放的双语布局。最终源码包经独立解压、重建并执行同一套检查；两种 ZIP 均附 SHA-256。检查使用模拟后端、隐藏托管控件和离屏绘制。真实下拉、程序选择、托盘、拖动、显示器 DPI 切换、游戏及反作弊兼容性仍未实测。[验证详情](docs/VALIDATION.md)。
-
-生产源码在 `src/`，回归测试在 `tests/`，构建、验证和打包脚本在 `scripts/`，双语预览在 `previews/en/` 与 `previews/zh-CN/`。普通 CI 保持仓库只读权限。
+构建与测试见 [开发文档](BUILDING.md)。项目采用 [GPLv3（仅第 3 版）](LICENSE)。版权所有 © 2026 RAINDAYS121。

@@ -78,8 +78,4 @@ An independent thread targets a 20 ms check interval. When a constraint is lost,
 
 ## Development and license
 
-Build with the existing .NET Framework compiler; no NuGet packages or external runtime are bundled. See [BUILDING.md](BUILDING.md). Project code and original icons use **GPL-3.0-only**; see [LICENSE](LICENSE) and [third-party notices](THIRD_PARTY_NOTICES.md). Copyright (c) 2026 **RAINDAYS121**. The project repository is [RAINDAYS121/CursorGuard](https://github.com/RAINDAYS121/CursorGuard); portable and matching source packages plus SHA-256 checksums are prepared for `v1.2.3`. GitHub Releases is authoritative for publication status.
-
-Version 1.2.3 passes 132 automatic regressions, including 18 language cases. The matching source ZIP is independently extracted, rebuilt and checked with the same suite. Both packages include SHA-256 checksums; identical binary output across compiler environments is not claimed. This revision uses fake backends, hidden managed controls and offscreen drawing. Actual dropdown/picker/tray interaction, dragging, physical monitor/DPI transitions, game and anti-cheat compatibility remain unverified. See [validation details](docs/VALIDATION.md).
-
-Production C# is under `src/`, regression code under `tests/`, PowerShell build/verify/package scripts under `scripts/`, and bilingual illustrative previews under `previews/en/` and `previews/zh-CN/`. Ordinary CI has read-only repository permissions.
+Build and test instructions: [BUILDING.md](BUILDING.md). Licensed under [GPLv3 (GPL-3.0-only)](LICENSE). Copyright © 2026 RAINDAYS121.

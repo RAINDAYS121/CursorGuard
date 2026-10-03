@@ -1,4 +1,4 @@
-﻿# SPDX-License-Identifier: GPL-3.0-only
+# SPDX-License-Identifier: GPL-3.0-only
 # Copyright (c) 2026 RAINDAYS121.
 $ErrorActionPreference='Stop'
 $packageRoot=[IO.Path]::GetFullPath((Split-Path -Parent $PSScriptRoot))
@@ -12,7 +12,7 @@ $releaseRoot=Join-Path $packageRoot 'release'
 New-Item -ItemType Directory -Path $releaseRoot -Force | Out-Null
 Add-Type -AssemblyName System.IO.Compression
 Add-Type -AssemblyName System.IO.Compression.FileSystem
-$rootNames=@('CursorGuard.exe.config','README.md','README.en.md','BUILDING.md','CHANGELOG.md','CONTRIBUTING.md','SECURITY.md','THIRD_PARTY_NOTICES.md','LICENSE','.gitignore','RELEASE_NOTES.md','docs\VERIFICATION-1.2.3.json')
+$rootNames=@('CursorGuard.exe.config','README.md','README.en.md','BUILDING.md','CHANGELOG.md','CONTRIBUTING.md','SECURITY.md','THIRD_PARTY_NOTICES.md','LICENSE','.gitignore','RELEASE_NOTES.md','docs\VERIFICATION-1.2.3.json','.github\release-request.json')
 $sourceFiles=[System.Collections.Generic.List[string]]::new()
 foreach($name in $rootNames) {$sourceFiles.Add((Join-Path $packageRoot $name))}
 foreach($subdir in @('src','tests','scripts','docs','.github','assets','previews')) {Get-ChildItem -LiteralPath (Join-Path $packageRoot $subdir) -Recurse -File | Where-Object {$_.Extension -in @('.cs','.ps1','.manifest','.md','.ico','.svg','.png','.yml','.yaml')} | ForEach-Object {$sourceFiles.Add($_.FullName)}}
