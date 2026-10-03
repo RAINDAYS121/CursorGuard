@@ -1,0 +1,22 @@
+{
+  "version": "1.2.3",
+  "simulation_passed": 132,
+  "simulation_failed": 0,
+  "language_tests": 18,
+  "languages": [
+    "zh-CN",
+    "en"
+  ],
+  "modes": [
+    "fake_backends",
+    "hidden_managed_controls",
+    "offscreen_renderer"
+  ],
+  "source_package_independent_rebuild": "passed",
+  "native_probe_run_for_this_revision": false,
+  "real_game_tested": false,
+  "real_physical_input_tested": false,
+  "real_monitor_dpi_tested": false,
+  "anticheat_compatibility_confirmed": false,
+  "deterministic_binary_reproduction_claimed": false
+}

@@ -1,5 +1,16 @@
 # Changelog
 
+## 1.2.3 — 2026-10-03
+
+- Add persistent Simplified Chinese / English selection for owned main/floating UI, menus, picker, help, errors and shortcut conflicts. Preserve user filenames and real window titles.
+- Save language in existing interface preferences; retain valid legacy appearance/position/visibility fields. Failed saves restore the previous dropdown and language.
+- Organize production code, tests and PowerShell into src/, tests/ and scripts/; update manifest, build/package and CI paths. Portable executable remains at the root.
+- Replace mixed-language English README with English captions and actual English renderer previews. Generate both languages with the app renderer and simulated data.
+- 132 regressions pass, including 18 language cases, both themes and four offscreen scales. Independently rebuild and verify the final source ZIP. Physical interaction, game and anti-cheat remain unverified.
+- Ordinary CI remains read-only. Existing 1.2.2 runtime folders and user configuration are preserved.
+
+新增中英文选项并保存；源码分目录，英文说明与实际界面预览同步更新。保护逻辑不变。
+
 ## 1.2.2 — 2026-10-03
 
 - Main program name replaced by its real read-only EXE icon, neutral fallback, full-name tooltip and clickable selection entry. Floating bar retains names; generic waiting text says 等待程序.

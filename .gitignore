@@ -29,3 +29,5 @@ floating.json
 native-probe*/
 docs/NATIVE-VERIFICATION-*.json
 ci-rebuild/
+
+artifacts/

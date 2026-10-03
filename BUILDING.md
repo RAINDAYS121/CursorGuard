@@ -1,61 +1,54 @@
 # Build and test / 构建与测试
 
-## 环境 / Requirements
+Windows 10/11 with an existing .NET Framework 4.x runtime/compiler and PowerShell. The scripts check the existing 64-bit compiler, then the 32-bit compiler. They install nothing, use no NuGet packages and change no execution policy.
 
-Windows 10/11 with an existing .NET Framework 4.x runtime and compiler. PowerShell is used for the scripts. The build checks `Framework64\v4.0.30319\csc.exe`, then the 32-bit compiler. It installs nothing, uses no NuGet packages, and does not change execution policy or machine settings.
+## Layout / 目录
 
-需要 Windows 10/11 已有的 .NET Framework 4.x 运行时及编译器。脚本不安装依赖、不下载软件、不修改执行策略。
+- `src/`: production C#, application manifest and optional rendering diagnostics.
+- `tests/`: fake-backend and hidden-control regression checks.
+- `scripts/`: build, verify and package commands.
+- `assets/`: original icon source graphics and ICO resources.
+- `previews/en/`, `previews/zh-CN/`: actual application renderer previews with simulated data.
+- `docs/`, `.github/`: validation, architecture and repository workflow files.
+
+The executable and runtime configuration remain at the extracted project root. Moving source files does not change portable startup or the legacy preference directory.
 
 ## Commands / 命令
 
-From the extracted project root / 在项目根目录执行：
+From the project root:
 
 ```powershell
-.\build.ps1
-.\verify.ps1
+.\scripts\build.ps1
+.\scripts\verify.ps1
+.\scripts\package.ps1
 ```
 
-The build uses warning level 4 and treats warnings as errors. `verify.ps1` runs the compiled program only in `--self-test` and `--render-preview` modes, using hidden subprocesses. It never starts the guard worker, registers real hotkeys, calls native ClipCursor or shows a normal app window. Results are written to `test-results.json`; generated images go to `previews`.
+Build uses warning level 4 with warnings as errors. Verify launches hidden subprocesses only in `--self-test`, `--render-preview` and `--render-preview-en` modes. It does not create the guard worker, register real hotkeys, write a cursor constraint, show the app or send input. Output is `test-results.json`, `verification.json` and ignored `artifacts/validation-previews/`. Verification does not overwrite the committed illustrative previews.
 
-构建把警告当作错误。验证只运行模拟测试和离屏绘制模式，不启用鼠标约束或注册真实热键，不显示正常窗口。
+1.2.3 runs 132 checks, including 18 language tests. They cover preference roundtrip, migration of absent/unknown language values, successful and failed saves, dropdown commitment, state/target preservation, English conflicts/errors, and both themes at 100%, 125%, 150% and 200%. Language test files are unique temporary fixtures inside the chosen test-output directory, removed on completion. They never read or write the user's effective preferences.
 
-Individual commands / 单独运行：
+验证仅使用模拟后端、隐藏托管控件、独立临时配置和离屏绘制。不会启动正常窗口、保护线程、真实快捷键或鼠标操作。当前用户的配置和运行目录保持不变。
+
+To regenerate curated previews, launch these modes in hidden subprocesses:
 
 ```powershell
-.\CursorGuard.exe --self-test "$PWD\test-results.json"
-.\CursorGuard.exe --render-preview "$PWD\previews"
+$previewExe=Join-Path $PWD 'CursorGuard.exe'
+Start-Process -FilePath $previewExe -ArgumentList ('--render-preview "'+$PWD+'\previews\zh-CN"') -WindowStyle Hidden -Wait
+Start-Process -FilePath $previewExe -ArgumentList ('--render-preview-en "'+$PWD+'\previews\en"') -WindowStyle Hidden -Wait
 ```
 
-Tests use fake cursor/hotkey/startup backends and unique temporary files inside the chosen output directory. A window-policy test constructs a hidden form without creating its native handle, inspects effective styles, and exercises its mouse-activation response in memory. It is not a physical focus test.
-
-Version 1.2.2 runs 114 checks. Managed hover events and synthetic movement traces verify paint/layout and state logic without physical mouse input; repeated/cancelled appearance commits and settings placement at four edges/scales are included. Adaptive-name checks cover short and long names, retained click areas, stable width across status changes, target-triggered floating resizing, and 125%/150%/200% offscreen scaling. Preview filenames `preview-name-*` and `preview-floating-name-*` show simulated League of Legends, Paint and a long target basename. Approved review boards are under `previews/review`.
-
-1.2.2 运行 114 项检查；托管悬停事件、合成移动轨迹、四边设置定位与重复外观选择不创建原生窗口，不发送真实鼠标/键盘输入。图标资源测试只读本工具的 EXE。源码包解压后使用同一套构建与验证命令。
-
-预览共享真实客户端绘制代码，状态和程序选择条目为明确标注的模拟数据。输入框、下拉框在离屏模式中绘制代表性文本和边框，实际 Windows 原生控件边缘可能不同。没有抓取用户当前桌面或运行中窗口标题。微渐变和边缘高光使用实际绘制；主界面和悬浮条的外缘由独立的每像素透明窗口合成，原生交互控件保留在内侧窗口区域。离屏位图验证不证明用户桌面的合成效果。
-
-The manifest requests `asInvoker` and PerMonitorV2/PerMonitor awareness. The runtime also checks DPI readiness before allowing protection. There is no elevation fallback. Icons under `assets/icons` are original source graphics; the build embeds `CursorGuard.ico` when present.
-
-## Native rendering probe / 原生绘制检查
-
-```powershell
-.\CursorGuard.exe --native-render-probe "$PWD\native-probe"
-```
-
-This optional mode creates only its own NOACTIVATE windows outside the current virtual desktop. It reads public foreground/clip metadata, records alpha/region/styles, reconstructs PrintWindow clients with the applied alpha bitmap, and checks programmatic placement/visibility. It does not start the worker, write effective preferences, register shortcuts, move the pointer or send input. It requires access to the interactive desktop; it is separate from verify.ps1 and is not a real drag/dropdown/tray test.
-
-此模式只创建桌面范围外的自身窗口，验证合成、布局和程序化显隐；不改变当前配置，不启动保护后端，不模拟鼠标或键盘。截图重建原生客户端与透明边框，并非用户桌面截屏。
+These modes use the same captions, layout and drawing code as the app, with explicitly simulated state/program data. Textbox and dropdown borders/text are representative offscreen drawings; Windows native popup borders can differ. No image editing, personal window-title enumeration or desktop capture is used. Installed Microsoft YaHei UI and Segoe UI have system-font fallbacks; no fonts are bundled.
 
 ## Packaging / 打包
 
-```powershell
-.\package.ps1
-```
+Packaging requires a passing report, the verified executable hash and version 1.2.3.0. It includes complete corresponding source, scripts, docs, original icon assets and bilingual previews in both ZIPs. The portable ZIP also includes the executable and sanitized test/verification reports. An explicit input allowlist excludes personal preferences, raw diagnostics, credentials, helpers and workspace history. Inputs cannot be reparse points or escape the project root. SHA256SUMS.txt accompanies the ZIPs. This script performs no upload or publication.
 
-Run build.ps1 and verify.ps1 first. Packaging rejects a failed test report, mismatched verified executable hash or wrong version. The script builds a portable ZIP including executable, complete source, docs and icons, plus a source-only ZIP. It uses an explicit allowlist, rejects symlinks/reparse points, verifies ZIP contents and writes SHA-256 checksums next to the ZIPs. Personal configurations, diagnostics, upload helpers, credentials and workspace history are excluded. The script does not upload, create a repository, push or publish a release.
+For an independent check, extract `release/CursorGuard-1.2.3-source.zip` into a new folder and run its `scripts/build.ps1` and `scripts/verify.ps1`. The ordinary GitHub workflow repeats this check with `contents: read`. Binary equality across different compiler/OS environments is not claimed.
 
-发行包可以解压后直接运行，源码包含完整对应源码及构建脚本。打包不访问个人配置或发布账户，不执行公开发布。
+## Optional native diagnostic / 可选原生检查
 
-## Manual checks / 待人工检查
+`CursorGuard.exe --native-render-probe <output>` is separate from verification. It creates its own NOACTIVATE windows outside the virtual desktop and reads public foreground/clip metadata, using PrintWindow and alpha surfaces to inspect its own rendering. It requires interactive desktop access and is not part of this revision's automatic validation. It never starts the guard worker or sends physical input. Run only when explicitly intended; raw host metadata is excluded from public packages.
 
-Follow [docs/VALIDATION.md](docs/VALIDATION.md). Run interactive checks after finishing the current game, with the old tool exited normally. Do not confuse successful simulation with real game or anti-cheat validation.
+## Manual validation / 人工检查
+
+Follow [docs/VALIDATION.md](docs/VALIDATION.md) after finishing the game and exiting the older tool normally. Check language restoration, native dropdown/file-picker/tray interaction, dragging, real DPI changes and game/fullscreen behavior separately. Simulations do not establish game or anti-cheat compatibility.

@@ -20,13 +20,13 @@ jobs:
         shell: powershell
         run: |
           $ErrorActionPreference = 'Stop'
-          .\build.ps1
-          .\verify.ps1
-          .\package.ps1
+          .\scripts\build.ps1
+          .\scripts\verify.ps1
+          .\scripts\package.ps1
       - name: Independently rebuild source package
         shell: powershell
         run: |
           $ErrorActionPreference = 'Stop'
-          Expand-Archive -LiteralPath .\release\CursorGuard-1.2.2-source.zip -DestinationPath .\ci-rebuild
-          .\ci-rebuild\CursorGuard-1.2.2-source\build.ps1
-          .\ci-rebuild\CursorGuard-1.2.2-source\verify.ps1
+          Expand-Archive -LiteralPath .\release\CursorGuard-1.2.3-source.zip -DestinationPath .\ci-rebuild
+          .\ci-rebuild\CursorGuard-1.2.3-source\scripts\build.ps1
+          .\ci-rebuild\CursorGuard-1.2.3-source\scripts\verify.ps1

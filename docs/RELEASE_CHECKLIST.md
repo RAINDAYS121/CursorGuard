@@ -5,9 +5,9 @@
 - [x] Complete source, original icons, Chinese/English usage and build docs.
 - [x] Exclude personal state, credentials, raw diagnostic logs and helper caches.
 - [x] Minimal contents-read-only build/test/package CI prepared.
-- [x] Confirm newly prepared release build, 114 checks and independent source rebuild.
+- [x] Confirm newly prepared release build, 132 checks and independent source rebuild.
 - [ ] Create/verify public RAINDAYS121/CursorGuard and upload reviewed source.
-- [ ] Publish tag v1.2.2 and portable/source/SHA256SUMS Release assets.
+- [ ] Publish tag v1.2.3 and portable/source/SHA256SUMS Release assets.
 - [ ] Verify remote source, tag, downloadable asset hashes and CI result.
 - [ ] Complete manual physical input/game/DPI checks; do not imply they passed.
 

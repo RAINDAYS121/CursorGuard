@@ -1,5 +1,17 @@
 # Architecture / 程序原理
 
+Production code is in `src/`, regression code in `tests/`, and build commands in
+`scripts/`. Portable executable/configuration paths remain at the project root.
+
+`UiText` translates owned UI from canonical domain messages. `GuardCore` and
+worker snapshots retain their original canonical statuses for classification.
+User executable basenames, manual input and actual window titles bypass
+translation. `FloatingPreferences.Language` is saved in the existing version-1
+interface preferences; absent/unknown language values normalize to zh-CN without
+discarding valid appearance/position/visibility data. Candidate language is saved
+before the global UI changes; failure retains the previous language. Native
+file-dialog controls remain owned and localized by Windows.
+
 `Worker` owns hotkey registration, state transitions and the guard loop on an independent thread. It publishes immutable-by-convention `View` snapshots to the UI. The panel, tray and floating bar consume the same snapshot; they never infer protected state from the switch alone.
 
 `WindowsBackend` reads the actual foreground HWND and PID, then query-limited process-image metadata. It obtains client coordinates only for the selected executable name, converts them to screen coordinates, obtains the monitor/virtual desktop, and rereads foreground identity to reject torn samples. It does not request PROCESS_VM_READ.
