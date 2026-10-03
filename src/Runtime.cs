@@ -40,7 +40,7 @@ namespace LoLMouseGuard
         public View ReadView() { lock (viewLock) return view; }
         public void Send(Command command) { requests.Enqueue(new Request { Command = command }); wake.Set(); }
         public void SaveSettings(Settings settings) { requests.Enqueue(new Request { Settings = settings.Copy() }); wake.Set(); }
-        void Publish(GuardCore core, SettingsService settings, bool stopped, bool editing, string notice, Scene scene)
+        void Publish(GuardCore core, SettingsService settings, SettingsSession edit, bool stopped, string notice, Scene scene)
         {
             string game = core.Enabled ? "未识别到前台目标" : "暂停检测";
             string range = core.Enabled ? "等待有效程序区域" : "尚未开始保护";
@@ -51,8 +51,8 @@ namespace LoLMouseGuard
                 if (scene.TryTarget(out target)) range = target.Width + " × " + target.Height + " px   ·   " + target;
             }
             string detail = (core.Detail ?? "").Replace("Ctrl+Alt+F9", settings.Current.Emergency.Display());
-            lock (viewLock) view = new View { Enabled = core.Enabled, CanEnable = core.CanEnable && !editing, Status = core.Status, Detail = detail,
-                Stopped = stopped, Editing = editing, Settings = settings.Current.Copy(), Notice = notice, Game = game, Range = range };
+            lock (viewLock) view = new View { Enabled = !stopped && edit.EnabledIntent, CanEnable = core.CanEnable && !edit.Editing, Status = core.Status, Detail = detail,
+                Stopped = stopped, Editing = !stopped && edit.Editing, Settings = settings.Current.Copy(), Notice = notice, Game = game, Range = range };
         }
         void Run()
         {
@@ -61,7 +61,7 @@ namespace LoLMouseGuard
             string notice; Settings initial = store.Load(out notice);
             backend.TargetExecutable = initial.TargetExecutable;
             SettingsService settings = new SettingsService(backend, store, new UserStartupStore(), Application.ExecutablePath, initial);
-            bool quit = false, editing = false;
+            bool quit = false;SettingsSession edit=new SettingsSession(core,settings);
             try
             {
                 Native.Message message; Native.PeekMessage(out message, IntPtr.Zero, 0, 0, 0);
@@ -74,47 +74,42 @@ namespace LoLMouseGuard
                         if (message.Id == 0x0312)
                         {
                             ulong id = message.WParam.ToUInt64();
-                            if (id == 2) core.Pause(true);
-                            else if (id == 3) quit = true;
-                            else if (id == 1 && !editing) { if (core.Enabled) core.Pause(false); else core.Enable(); }
+                            if (id == 2) edit.Pause(true);
+                            else if (id == 3) {edit.Abort();quit = true;}
+                            else if (id == 1 && !edit.Editing) { if (core.Enabled) edit.Pause(false); else core.Enable(); }
                         }
-                        else if (message.Id == 0x0012) quit = true;
+                        else if (message.Id == 0x0012) {edit.Abort();quit = true;}
                     }
+                    if(quit) break;
                     Request request;
                     while (requests.TryDequeue(out request))
                     {
                         if (request.Settings != null)
                         {
-                            if (!editing) { notice = "请先打开设置，保护暂停后才能修改。"; continue; }
-                            string problem = request.Settings.Validate();
-                            if (problem != null) { notice = problem; continue; }
-                            settings.Save(request.Settings, out notice); backend.TargetExecutable = settings.Current.TargetExecutable; editing = false;
-                            core.SetHotkeys(settings.Ready, notice);
+                            edit.Save(request.Settings,out notice);backend.TargetExecutable=settings.Current.TargetExecutable;
                         }
-                        else if (request.Command == Command.Quit) quit = true;
-                        else if (request.Command == Command.Emergency) core.Pause(true);
-                        else if (request.Command == Command.Pause) core.Pause(false);
+                        else if (request.Command == Command.Quit) {edit.Abort();quit=true;break;}
+                        else if (request.Command == Command.Emergency) edit.Pause(true);
+                        else if (request.Command == Command.Pause) edit.Pause(false);
                         else if (request.Command == Command.BeginSettings)
                         {
-                            if (!SettingsEntry.TryBegin(core, settings, ref editing)) { notice = "尚未确认释放本工具约束，不能编辑。请使用紧急释放或正常 Alt+Tab。"; continue; }
-                            core.SetHotkeys(false, "编辑设置期间保持暂停。Alt+F4 可随时退出。"); notice = null;
+                            edit.Begin(out notice);
                         }
                         else if (request.Command == Command.CancelSettings)
                         {
-                            if (editing) { string restoredError; core.SetHotkeys(settings.RegisterCurrent(out restoredError), restoredError); }
-                            editing = false; notice = null;
+                            edit.Cancel(out notice);
                         }
-                        else if (!editing && request.Command == Command.Enable) core.Enable();
-                        else if (!editing && request.Command == Command.Toggle) { if (core.Enabled) core.Pause(false); else core.Enable(); }
+                        else if (!edit.Editing && request.Command == Command.Enable) core.Enable();
+                        else if (request.Command == Command.Toggle) {if(edit.Editing || core.Enabled) edit.Pause(false);else core.Enable();}
                     }
                     if (quit) break;
                     Scene scene = null;
                     if (core.Enabled || core.OwnsClip) { scene = backend.ReadScene(); core.Step(scene, clock.ElapsedMilliseconds); }
-                    Publish(core, settings, false, editing, notice, scene); wake.WaitOne(20);
+                    Publish(core, settings, edit, false, notice, scene); wake.WaitOne(20);
                 }
             }
-            catch (Exception e) { core.Pause(false); notice = "工具异常：" + e.GetType().Name + "。已停止，请正常 Alt+Tab 切出。"; }
-            finally { try { core.Stop(); } finally { settings.Dispose(); } Publish(core, settings, true, false, notice, null); }
+            catch (Exception e) { edit.Abort(); notice = "工具异常：" + e.GetType().Name + "。已停止，请正常 Alt+Tab 切出。"; }
+            finally { try { core.Stop(); } finally { settings.Dispose(); } Publish(core, settings, edit, true, notice, null); }
         }
         public void Dispose() { if (Interlocked.Exchange(ref disposed, 1) == 0) { Send(Command.Quit); thread.Join(2000); } }
     }

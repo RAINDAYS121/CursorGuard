@@ -1,5 +1,12 @@
 # Changelog
 
+## 1.2.4 — 2026-10-04
+
+- Preserve enable intention while editing settings; restore only after successful completion or cancellation. Explicit pause, emergency, quit and errors win.
+- Keep language choices as 中文 / English in both locales.
+- Add persisted Program icon / Program name display for main and floating bars, default icon; retain actual status and names.
+- 新增设置状态记忆、固定语言本名选项和目标程序显示方式；图标仅留内存，旧配置保留其他偏好。
+
 ## 1.2.3 — 2026-10-03
 
 - Add persistent Simplified Chinese / English selection for owned main/floating UI, menus, picker, help, errors and shortcut conflicts. Preserve user filenames and real window titles.

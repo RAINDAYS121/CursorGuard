@@ -41,7 +41,7 @@ namespace LoLMouseGuard
                 }
             });
             test("main_icon_click_opens_selection_edit_path_without_native_input",delegate {
-                View view=Previews.State("paused");using(ControlPanel panel=new ControlPanel(new PreviewSession(view),true,false)) {panel.PreviewClickProgram();Check(view.Editing && panel.Height==364 && !panel.IsHandleCreated);panel.PreviewReturn();Check(panel.Height==44 && !panel.IsHandleCreated);}
+                View view=Previews.State("paused");using(ControlPanel panel=new ControlPanel(new PreviewSession(view),true,false)) {panel.PreviewClickProgram();Check(view.Editing && panel.Height==402 && !panel.IsHandleCreated);panel.PreviewReturn();Check(panel.Height==44 && !panel.IsHandleCreated);}
             });
             test("program_icon_click_target_and_tooltip_at_125_150_200_dpi",delegate {
                 foreach(float scale in new[] {1.25f,1.5f,2f}) using(ControlPanel panel=new ControlPanel(new PreviewSession(Previews.State("waiting")),true,false)) using(Bitmap image=panel.RenderPreview(scale)) {Check(panel.ClientRectangle.Contains(panel.PreviewProgramClickBounds) && panel.PreviewProgramClickBounds.Width>=(int)(30*scale) && panel.PreviewProgramClickBounds.Height>=(int)(30*scale) && panel.PreviewProgramToolTip.Contains("League of Legends.exe") && !panel.IsHandleCreated);}

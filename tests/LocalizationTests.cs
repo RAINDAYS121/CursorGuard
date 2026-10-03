@@ -14,7 +14,7 @@ namespace LoLMouseGuard
         static void Check(bool value,string detail) {if(!value) throw new Exception(detail);}
         static void EnglishControls(Control parent,string rawTarget)
         {
-            if(!(parent is TextBox)) Check(!UiText.HasChinese(parent.Text),"Chinese owned caption: "+parent.Text);
+            if(!(parent is TextBox) && !(parent is ProgramIconButton) && !(parent is ComboBox && parent.Text=="中文")) Check(!UiText.HasChinese(parent.Text),"Chinese owned caption: "+parent.Text);
             if(parent is TextBox) Check(parent.Text==rawTarget,"Target changed");
             if(!(parent is ProgramIconButton)) Check(!UiText.HasChinese(parent.AccessibleName),"Chinese accessible label");
             foreach(Control child in parent.Controls) EnglishControls(child,rawTarget);
@@ -64,7 +64,7 @@ namespace LoLMouseGuard
                 UiText.SetLanguage("en");using(ControlPanel form=new ControlPanel(new PreviewSession(Previews.State("settings")),true,false)) {form.PreviewSettings();for(int i=0;i<10;i++) form.PreviewRefresh();EnglishControls(form,"League of Legends.exe");EnglishMenu(form.PreviewPanelMenu);Check(!form.IsHandleCreated,"Refresh created native window");}
             });
             test("language_bilingual_layout_at_four_scales_and_two_themes",delegate {
-                foreach(string locale in new[] {"zh-CN","en"}) foreach(bool dark in new[] {false,true}) foreach(float scale in new[] {1f,1.25f,1.5f,2f}) {UiText.SetLanguage(locale);Theme.Apply(dark,false);using(ControlPanel form=new ControlPanel(new PreviewSession(Previews.State("settings")),true,false)) {form.PreviewSettings();using(Bitmap bitmap=form.RenderPreview(scale)) {Check(Math.Abs(bitmap.Width-380*scale)<=1 && Math.Abs(bitmap.Height-364*scale)<=1,"Settings size mismatch");ComboBox choice=form.PreviewLanguageChoice;Check(choice.Parent.ClientRectangle.Contains(choice.Bounds) && choice.Width>=(int)(220*scale),"Language choice clipped");Check(!form.IsHandleCreated && !choice.IsHandleCreated,"Layout created native window");}}
+                foreach(string locale in new[] {"zh-CN","en"}) foreach(bool dark in new[] {false,true}) foreach(float scale in new[] {1f,1.25f,1.5f,2f}) {UiText.SetLanguage(locale);Theme.Apply(dark,false);using(ControlPanel form=new ControlPanel(new PreviewSession(Previews.State("settings")),true,false)) {form.PreviewSettings();using(Bitmap bitmap=form.RenderPreview(scale)) {Check(Math.Abs(bitmap.Width-380*scale)<=1 && Math.Abs(bitmap.Height-402*scale)<=1,"Settings size mismatch");ComboBox choice=form.PreviewLanguageChoice;Check(choice.Parent.ClientRectangle.Contains(choice.Bounds) && choice.Width>=(int)(220*scale),"Language choice clipped");Check(!form.IsHandleCreated && !choice.IsHandleCreated,"Layout created native window");}}
                 using(FloatingBar bar=new FloatingBar(true)) {bar.Present(Previews.State("protected"));using(Bitmap bitmap=bar.PreviewBitmap(scale)) Check(bitmap.Width<=(int)(210*scale) && !bar.IsHandleCreated,"Floating layout overflow");}}
             });
             test("language_small_work_area_can_reveal_last_row_without_focus",delegate {

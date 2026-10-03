@@ -36,13 +36,15 @@ namespace LoLMouseGuard
         public Shortcut Exit = new Shortcut(3, 0x79);
         public bool StartWithWindows;
         public string TargetExecutable = "League of Legends.exe";
+        public string TargetDisplay = "icon";
         public static Settings Defaults() { return new Settings(); }
-        public Settings Copy() { return new Settings { Version = Version, Toggle = Toggle.Copy(), Emergency = Emergency.Copy(), Exit = Exit.Copy(), StartWithWindows = StartWithWindows, TargetExecutable = TargetExecutable }; }
+        public Settings Copy() { return new Settings { Version = Version, Toggle = Toggle.Copy(), Emergency = Emergency.Copy(), Exit = Exit.Copy(), StartWithWindows = StartWithWindows, TargetExecutable = TargetExecutable, TargetDisplay = TargetDisplay }; }
         [ScriptIgnore]
         public Shortcut[] Keys { get { return new[] { Toggle, Emergency, Exit }; } }
         public string Validate()
         {
             if (Version != 1) return "不支持的配置版本。";
+            if(TargetDisplay!="icon" && TargetDisplay!="name") return "目标程序显示方式无效。";
             if (String.IsNullOrWhiteSpace(TargetExecutable) || TargetExecutable.Length > 128 || !TargetExecutable.EndsWith(".exe", StringComparison.OrdinalIgnoreCase) || TargetExecutable != TargetExecutable.Trim() || TargetExecutable.IndexOfAny(Path.GetInvalidFileNameChars()) >= 0 || TargetExecutable.IndexOfAny(new[] {'/','\\','\r','\n','\0'}) >= 0)
                 return "目标程序请填写完整可执行文件名，例如 League of Legends.exe；不要填写路径或通配符。";
             HashSet<string> combinations = new HashSet<string>();
@@ -183,7 +185,7 @@ namespace LoLMouseGuard
                 store.Save(candidate);
                 if (active != null) active.Dispose();
                 active = next; Current = candidate.Copy(); Ready = true;
-                message = "设置已保存。保护保持暂停；自启登录也默认暂停。"; return true;
+                message = "设置已保存。自启登录仍默认暂停。"; return true;
             }
             catch (Exception e)
             {

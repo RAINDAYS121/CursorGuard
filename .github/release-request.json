@@ -1,10 +1,4 @@
 {
-  "version": "1.2.3",
-  "publish": true,
-  "attempt": 6,
-  "resume_empty_draft": {
-    "id": 402625583,
-    "previous_target": "dd63773f124010773c53e68d6e9c1a7e864a723e",
-    "previous_tag": "untagged-d856661dc67a8210c4c4"
-  }
+  "version": "1.2.4",
+  "publish": true
 }

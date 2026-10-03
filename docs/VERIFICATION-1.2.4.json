@@ -1,0 +1,12 @@
+{
+  "version": "1.2.4",
+  "simulation_passed": 148,
+  "simulation_failed": 0,
+  "mode": "simulation_and_offscreen_only",
+  "new_settings_display_cases": 16,
+  "source_zip_independent_rebuild_required": true,
+  "real_game_tested": false,
+  "real_drag_focus_tested": false,
+  "real_monitor_dpi_tested": false,
+  "anticheat_compatibility_confirmed": false
+}

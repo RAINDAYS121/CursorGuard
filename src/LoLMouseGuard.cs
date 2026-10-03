@@ -1,6 +1,6 @@
 // SPDX-License-Identifier: GPL-3.0-only
 // Copyright (c) 2026 RAINDAYS121.
-// CursorGuard 1.2.3. Public Win32 APIs only; no hooks, injection or game memory.
+// CursorGuard 1.2.4. Public Win32 APIs only; no hooks, injection or game memory.
 using System;
 using System.Collections.Generic;
 using System.Collections.Concurrent;
@@ -13,8 +13,8 @@ using System.Threading;
 using System.Web.Script.Serialization;
 using System.Windows.Forms;
 
-[assembly: System.Reflection.AssemblyVersion("1.2.3.0")]
-[assembly: System.Reflection.AssemblyFileVersion("1.2.3.0")]
+[assembly: System.Reflection.AssemblyVersion("1.2.4.0")]
+[assembly: System.Reflection.AssemblyFileVersion("1.2.4.0")]
 [assembly: System.Reflection.AssemblyProduct("CursorGuard")]
 [assembly: System.Reflection.AssemblyCopyright("Copyright (c) 2026 RAINDAYS121")]
 
@@ -324,7 +324,7 @@ namespace LoLMouseGuard
             test("cursor_read_failure_fail_open", delegate { FakeBackend b = new FakeBackend(); GuardCore c = Ready(b); Active(c, Game()); Scene s = Game(); s.CursorReady = false; c.Step(s, 101); Assert(b.Frees == 1 && b.Applies == 1); });
             test("apply_focus_race_cleanup_failure_retains_ownership", delegate { FakeBackend b = new FakeBackend(); b.AppliedReleaseFailure = true; b.FailFree = true; GuardCore c = Ready(b); Active(c, Game()); Assert(!c.Enabled && c.OwnsClip && b.Applies == 1); b.FailFree = false; c.Step(new Scene(), 120); Assert(!c.OwnsClip && b.Frees == 2); });
             int failed = checks.FindAll(delegate(Check c) { return !c.passed; }).Count;
-            object report = new { version = "1.2.3", utc = DateTime.UtcNow.ToString("o"), mode = "simulation_only_no_native_input_or_clip_calls", passed = checks.Count - failed, failed = failed, tests = checks,
+            object report = new { version = "1.2.4", utc = DateTime.UtcNow.ToString("o"), mode = "simulation_only_no_native_input_or_clip_calls", passed = checks.Count - failed, failed = failed, tests = checks,
                 unverified = new[] { "Actual Windows hotkey availability/delivery", "Actual game/full-screen/DPI behavior", "Measured Alt+Tab release latency", "Forced termination/OS hangs", "Anti-cheat compatibility" } };
             File.WriteAllText(output, new JavaScriptSerializer().Serialize(report), new UTF8Encoding(false));
             return failed == 0 ? 0 : 1;
@@ -336,7 +336,7 @@ namespace LoLMouseGuard
         [STAThread]
         static int Main(string[] args)
         {
-            if (args.Length == 2 && args[0] == "--self-test") { string output = Path.GetFullPath(args[1]); int core = SelfTests.Run(output); int settings = SettingsTests.Append(output); int floating = FloatingTests.Append(output); int ui = Math.Max(Math.Max(UiRegressionTests.Append(output), ProgramIconTests.Append(output)),Math.Max(SettingsScrollTests.Append(output),LocalizationTests.Append(output))); return Math.Max(ui, Math.Max(core, Math.Max(settings, floating))); }
+            if (args.Length == 2 && args[0] == "--self-test") { string output = Path.GetFullPath(args[1]); int core = SelfTests.Run(output); int settings = SettingsTests.Append(output); int floating = FloatingTests.Append(output); int ui = Math.Max(Math.Max(UiRegressionTests.Append(output), ProgramIconTests.Append(output)),Math.Max(SettingsScrollTests.Append(output),Math.Max(LocalizationTests.Append(output),SettingsSessionTests.Append(output)))); return Math.Max(ui, Math.Max(core, Math.Max(settings, floating))); }
             if (args.Length == 2 && (args[0] == "--render-preview" || args[0] == "--render-preview-en")) {UiText.SetLanguage(args[0]=="--render-preview-en"?"en":"zh-CN");return Previews.Render(Path.GetFullPath(args[1]));}
             if (args.Length == 2 && args[0] == "--native-render-probe") return NativeRenderProbe.Run(Path.GetFullPath(args[1]));
             if (args.Length == 3 && args[0] == "--render-review") return ReviewBoards.Render(Path.GetFullPath(args[1]),Path.GetFullPath(args[2]));

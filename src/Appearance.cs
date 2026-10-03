@@ -51,6 +51,11 @@ namespace LoLMouseGuard
             r.SeparatorX=r.NameX+r.NameWidth+2;r.StatusX=r.SeparatorX+10;
             r.Width=r.StatusX+r.StatusWidth+7;return r;
         }
+        public static CompactBarLayout ForFloatingIcon(string status)
+        {
+            CompactBarLayout r=new CompactBarLayout {IconX=22,IconWidth=20,SeparatorX=46,StatusX=58,StatusWidth=TextWidth(status,UiTypography.Caption)};
+            r.Width=r.StatusX+r.StatusWidth+7;return r;
+        }
         public static CompactBarLayout ForMainIcon(string status)
         {
             CompactBarLayout r=new CompactBarLayout {IconX=10,IconWidth=30,StatusX=44,StatusWidth=TextWidth(status,UiTypography.Caption)};

@@ -36,7 +36,7 @@ namespace LoLMouseGuard
             Action<string,Action> test=delegate(string name,Action action) {SelfTests.Check check=new SelfTests.Check {name=name};try {action();check.passed=true;}catch(Exception e){check.error=e.ToString();}checks.Add(check);};
             test("settings_below_then_above_restores_main_anchor",delegate {
                 Rectangle work=new Rectangle(0,0,1920,1040),top=new Rectangle(30,20,285,44),bottom=new Rectangle(1700,970,285,44);
-                Rectangle down=SettingsPlacement.Calculate(top,work,new Size(380,364),1),up=SettingsPlacement.Calculate(bottom,work,new Size(380,364),1);
+                Rectangle down=SettingsPlacement.Calculate(top,work,new Size(380,402),1),up=SettingsPlacement.Calculate(bottom,work,new Size(380,402),1);
                 Check(down.Top==top.Bottom+8 && up.Bottom==bottom.Top-8 && work.Contains(up));
                 using(ControlPanel form=new ControlPanel(new PreviewSession(Previews.State("settings")),true,false)) {form.Bounds=bottom;form.PreviewOpenSettingsAt(bottom,work,1);Check(form.Bounds==up);form.PreviewReturn();Check(form.Location==bottom.Location && form.Height==44 && !form.IsHandleCreated);}
             });
@@ -44,7 +44,7 @@ namespace LoLMouseGuard
                 foreach(Rectangle work in new[] {new Rectangle(0,40,1920,1000),new Rectangle(48,0,1872,1040),new Rectangle(-2560,-200,2560,1400),new Rectangle(-1280,40,1280,700)})
                 foreach(double scale in new[] {1.0,1.25,1.5,2.0})
                 foreach(Point corner in new[] {work.Location,new Point(work.Right-250,work.Top),new Point(work.Left,work.Bottom-44),new Point(work.Right-250,work.Bottom-44)})
-                {Rectangle main=new Rectangle(corner,new Size(250,44)),placed=SettingsPlacement.Calculate(main,work,new Size((int)Math.Round(380*scale),(int)Math.Round(364*scale)),scale);Check(work.Contains(placed));}
+                {Rectangle main=new Rectangle(corner,new Size(250,44)),placed=SettingsPlacement.Calculate(main,work,new Size((int)Math.Round(380*scale),(int)Math.Round(402*scale)),scale);Check(work.Contains(placed));}
             });
             test("settings_short_work_area_scrolls_and_header_remains_visible",delegate {
                 Rectangle work=new Rectangle(-800,100,800,180),main=new Rectangle(-500,210,285,44);
@@ -106,7 +106,7 @@ namespace LoLMouseGuard
                         using(Bitmap initial=form.RenderPreview(scale)) {}Size mainSize=form.ClientSize;Rectangle main=new Rectangle(corner,mainSize);
                         form.PreviewOpenSettingsAt(main,work,scale);form.PreviewRefresh();Check(work.Contains(form.Bounds));
                         foreach(Control child in form.Controls) if(child is PlainButton && (child.Text=="‹ 返回" || child.Text=="完成" || child.Text=="···")) {Check(form.ClientRectangle.Contains(child.Bounds));Check(child.Bottom<=(int)Math.Round(40*scale));}
-                        Check(form.PreviewScrollRequired==(work.Height<(int)Math.Round(364*scale)));
+                        Check(form.PreviewScrollRequired==(work.Height<(int)Math.Round(402*scale)));
                         form.PreviewReturn();Check(form.Location==main.Location && form.ClientSize==mainSize && session.Commands.Count==0 && !form.IsHandleCreated);
                     }
                 }

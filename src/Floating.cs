@@ -6,6 +6,7 @@ using System.Drawing;
 using System.IO;
 using System.Runtime.InteropServices;
 using System.Text;
+using System.Threading;
 using System.Web.Script.Serialization;
 using System.Windows.Forms;
 
@@ -134,8 +135,8 @@ namespace LoLMouseGuard
             try
             {
                 bool created = window == null; if (created) window = factory();
-                string name=StatusPresentation.Name(view),status=StatusPresentation.Short(view),key=name+"\n"+status;int previousWidth=logicalWidth;
-                if(targetName!=key) {targetName=key;logicalWidth=CompactBarLayout.Floating(name,status).Width;}
+                string name=StatusPresentation.Name(view),status=StatusPresentation.Short(view),key=view.Settings.TargetDisplay+"\n"+name+"\n"+status;int previousWidth=logicalWidth;
+                if(targetName!=key) {targetName=key;logicalWidth=(view.Settings.TargetDisplay=="name"?CompactBarLayout.Floating(name,status):CompactBarLayout.ForFloatingIcon(status)).Width;}
                 string signature = FloatingGeometry.Signature(screens);
                 if (created || signature != screenSignature || previousWidth!=logicalWidth) { window.Place(FloatingGeometry.Restore(Preferences, screens,logicalWidth)); screenSignature = signature; }
                 window.Present(view); if (!window.Shown) window.ShowPassive();
@@ -185,6 +186,8 @@ namespace LoLMouseGuard
         readonly bool preview;
         readonly bool nativePreview;
         readonly ToolTip tips;
+        readonly ProgramIconCache programIcons=new ProgramIconCache(new NativeProgramIconSource());
+        Bitmap programImage;bool iconBusy;long iconGeneration;string iconKey;DateTime iconRead=DateTime.MinValue;
         string tipText;
         string targetName;
         CompactBarLayout layout;
@@ -197,7 +200,7 @@ namespace LoLMouseGuard
         public FloatingBar(bool offscreen,bool nativeOnlyPreview=false)
         {
             preview = offscreen;nativePreview=nativeOnlyPreview;Text = UiText.T("鼠标锁定状态"); FormBorderStyle = FormBorderStyle.None; ShowInTaskbar = false; StartPosition = FormStartPosition.Manual;
-            targetName=StatusPresentation.Name(view);layout=CompactBarLayout.Floating(targetName);
+            targetName=StatusPresentation.Name(view);layout=CompactBarLayout.ForFloatingIcon(StatusPresentation.Short(view));
             ClientSize = new Size(layout.Width, FloatingGeometry.Height); BackColor = Theme.Background; AutoScaleMode = AutoScaleMode.None; DoubleBuffered = true;
             if(!preview) {tips=new ToolTip {InitialDelay=500,AutoPopDelay=8000,ReshowDelay=100};frame=new RoundedFrame();}
             else if(nativePreview) frame=new RoundedFrame();
@@ -223,8 +226,27 @@ namespace LoLMouseGuard
         public int PreviewFrameUpdates {get{return frame==null?0:frame.Updates;}}
         public void Place(Rectangle bounds)
         { if (preview) Bounds = bounds; else if (!SetWindowPos(Handle, new IntPtr(-1), bounds.X, bounds.Y, bounds.Width, bounds.Height, 0x0010 | 0x0200)) throw new System.ComponentModel.Win32Exception(); }
-        public void Present(View source) { Text=UiText.T("鼠标锁定状态");view = source;string name=StatusPresentation.Name(view),status=StatusPresentation.Short(view),key=name+"\n"+status;if(targetName!=key) {targetName=key;layout=CompactBarLayout.Floating(name,status);} BackColor = Theme.Background;string full=StatusPresentation.Full(view);if(frameFailed) full+=UiText.T(" · 圆角合成失败，已回退到普通窗口");if(tips!=null && full!=tipText) {tipText=full;tips.SetToolTip(this,full);}SyncFrame();Invalidate(); }
-        public void ShowPassive() { if (!preview) Show(); }
+        public void Present(View source) { Text=UiText.T("鼠标锁定状态");view = source;string name=StatusPresentation.Name(view),status=StatusPresentation.Short(view),key=view.Settings.TargetDisplay+"\n"+name+"\n"+status;if(targetName!=key) {targetName=key;layout=view.Settings.TargetDisplay=="name"?CompactBarLayout.Floating(name,status):CompactBarLayout.ForFloatingIcon(status);} BackColor = Theme.Background;string full=StatusPresentation.Full(view);if(frameFailed) full+=UiText.T(" · 圆角合成失败，已回退到普通窗口");if(tips!=null && full!=tipText) {tipText=full;tips.SetToolTip(this,full);}RefreshProgramIcon();SyncFrame();Invalidate(); }
+        void SetProgramImage(Bitmap image) {Bitmap old=programImage;programImage=image;if(old!=null) old.Dispose();Invalidate();}
+        void RefreshProgramIcon()
+        {
+            if(preview || IsDisposed) return;
+            string executable=view.Settings.TargetExecutable;
+            int pixels=Math.Max(16,(int)Math.Round(20*ClientSize.Height/(double)FloatingGeometry.Height));
+            string key=view.Settings.TargetDisplay+"|"+executable+"|"+pixels;
+            if(key!=iconKey) {iconKey=key;iconGeneration++;iconRead=DateTime.MinValue;programIcons.Reset();SetProgramImage(null);}
+            if(view.Settings.TargetDisplay=="name" || !IsHandleCreated || iconBusy || (DateTime.UtcNow-iconRead).TotalSeconds<5) return;
+            iconBusy=true;iconRead=DateTime.UtcNow;long generation=iconGeneration;
+            ThreadPool.QueueUserWorkItem(delegate {
+                Bitmap image=programIcons.Read(executable,pixels);
+                try {if(IsDisposed || !IsHandleCreated) {if(image!=null) image.Dispose();return;}
+                    BeginInvoke((MethodInvoker)delegate {iconBusy=false;if(IsDisposed || generation!=iconGeneration) {if(image!=null) image.Dispose();return;}SetProgramImage(image);});
+                }catch(InvalidOperationException) {if(image!=null) image.Dispose();}
+            });
+        }
+        public bool PreviewHasProgramImage {get{return programImage!=null;}}
+        public void PreviewUseIconFile(string file) {if(!preview) throw new InvalidOperationException();SetProgramImage(new NativeProgramIconSource().Extract(file,32));}
+        public void ShowPassive() { if (!preview) {Show();RefreshProgramIcon();} }
         public void HidePassive() { Hide(); }
         protected override void OnPaint(PaintEventArgs e)
         {
@@ -232,7 +254,8 @@ namespace LoLMouseGuard
             g.ScaleTransform(ClientSize.Width / (float)layout.Width, ClientSize.Height / (float)FloatingGeometry.Height);
             Theme.Surface(g,new RectangleF(.5f,.5f,layout.Width-1,FloatingGeometry.Height-1),14.5f);
             using (Brush b = new SolidBrush(StatusPresentation.Signal(view))) g.FillEllipse(b, 10, 12, 6, 6);
-            Theme.Write(g, StatusPresentation.Name(view), layout.NameX, 3, layout.NameWidth, 24, UiTypography.Caption, Theme.Text, false, StringAlignment.Near);
+            if(view.Settings.TargetDisplay=="name") Theme.Write(g, StatusPresentation.Name(view), layout.NameX, 3, layout.NameWidth, 24, UiTypography.Caption, Theme.Text, false, StringAlignment.Near);
+            else ProgramIconDrawing.Paint(g,programImage,new RectangleF(layout.IconX,5,layout.IconWidth,20),true);
             Theme.Write(g, "·", layout.SeparatorX, 3, 8, 24, UiTypography.Caption, Theme.Muted, false, StringAlignment.Center);
             Theme.Write(g, StatusPresentation.Short(view), layout.StatusX, 3, layout.StatusWidth, 24, UiTypography.Caption, Theme.Text, false, StringAlignment.Near);
         }
@@ -244,7 +267,7 @@ namespace LoLMouseGuard
             ClientSize=new Size((int)Math.Round(layout.Width*scale),(int)Math.Round(FloatingGeometry.Height*scale));
             return PreviewBitmap();
         }
-        protected override void Dispose(bool disposing) {if(disposing) {if(tips!=null) tips.Dispose();if(frame!=null) {frame.Dispose();frame=null;}}base.Dispose(disposing);}
+        protected override void Dispose(bool disposing) {if(disposing) {iconGeneration++;programIcons.Dispose();SetProgramImage(null);if(tips!=null) tips.Dispose();if(frame!=null) {frame.Dispose();frame=null;}}base.Dispose(disposing);}
     }
 }
 

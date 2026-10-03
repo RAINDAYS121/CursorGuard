@@ -87,21 +87,30 @@ namespace LoLMouseGuard
         }
         public void Dispose() {lock(gate) {if(disposed) return;disposed=true;generation++;ClearImage();}}
     }
+    static class ProgramIconDrawing
+    {
+        public static void Paint(Graphics g,Bitmap image,RectangleF bounds,bool enabled)
+        {
+            g.SmoothingMode=SmoothingMode.AntiAlias;
+            float size=Math.Min(bounds.Width,bounds.Height),scale=size/20f,x=bounds.X+(bounds.Width-size)/2,y=bounds.Y+(bounds.Height-size)/2;
+            if(image!=null) {g.InterpolationMode=InterpolationMode.HighQualityBicubic;g.DrawImage(image,new RectangleF(x,y,size,size));return;}
+            using(Pen pen=new Pen(enabled?Theme.Text:Theme.Muted,1.35f*scale))
+            using(GraphicsPath shape=Theme.Rounded(new RectangleF(x+1.5f*scale,y+3*scale,size-3*scale,size-6*scale),2.4f*scale))
+            {pen.LineJoin=LineJoin.Round;g.DrawPath(pen,shape);g.DrawLine(pen,x+2*scale,y+7.5f*scale,x+18*scale,y+7.5f*scale);}
+            using(Brush dot=new SolidBrush(Theme.Muted)) {g.FillEllipse(dot,x+4*scale,y+4.4f*scale,1.2f*scale,1.2f*scale);g.FillEllipse(dot,x+6.5f*scale,y+4.4f*scale,1.2f*scale,1.2f*scale);}
+        }
+    }
     sealed class ProgramIconButton : PlainButton
     {
         Bitmap image;
+        public bool NameOnly;
         public void SetImage(Bitmap value) {Bitmap old=image;image=value;if(old!=null) old.Dispose();Invalidate();}
         public bool HasProgramImage {get{return image!=null;}}
         protected override void OnPaint(PaintEventArgs e)
         {
-            base.OnPaint(e);Graphics g=e.Graphics;g.SmoothingMode=SmoothingMode.AntiAlias;
-            float scale=Height/30f,size=20*scale,x=(Width-size)/2,y=(Height-size)/2;
-            if(image!=null) {g.InterpolationMode=InterpolationMode.HighQualityBicubic;g.DrawImage(image,new RectangleF(x,y,size,size));return;}
-            // One neutral application-window glyph, never a guessed brand icon.
-            using(Pen pen=new Pen(Enabled?Theme.Text:Theme.Muted,1.35f*scale))
-            using(GraphicsPath shape=Theme.Rounded(new RectangleF(x+1.5f*scale,y+3*scale,size-3*scale,size-6*scale),2.4f*scale))
-            {pen.LineJoin=LineJoin.Round;g.DrawPath(pen,shape);g.DrawLine(pen,x+2*scale,y+7.5f*scale,x+18*scale,y+7.5f*scale);}
-            using(Brush dot=new SolidBrush(Theme.Muted)) {g.FillEllipse(dot,x+4*scale,y+4.4f*scale,1.2f*scale,1.2f*scale);g.FillEllipse(dot,x+6.5f*scale,y+4.4f*scale,1.2f*scale,1.2f*scale);}
+            base.OnPaint(e);if(NameOnly) return;
+            float size=20*Height/30f;
+            ProgramIconDrawing.Paint(e.Graphics,image,new RectangleF((Width-size)/2,(Height-size)/2,size,size),Enabled);
         }
         protected override void Dispose(bool disposing) {if(disposing && image!=null) {image.Dispose();image=null;}base.Dispose(disposing);}
     }

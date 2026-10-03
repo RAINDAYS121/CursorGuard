@@ -1,10 +1,12 @@
-# CursorGuard 1.2.3
+# CursorGuard 1.2.4
 
 [Chinese](README.md) · [Build and test](BUILDING.md) · [Validation limits](docs/VALIDATION.md)
 
 A Windows 10/11 desktop utility that confines the cursor to the valid client area of your selected foreground program. League of Legends is the default; other games or applications can be selected. The capsule window and optional floating bar display the selected program and actual state.
 
-Version 1.2.3 adds persistent Simplified Chinese / English selection and organizes production code, tests and scripts into separate directories. Portable and complete source packages are prepared for manual validation. The main window displays the selected program's actual executable icon, with its complete basename and state in a tooltip; clicking the icon opens program selection. Icon resources are read without launching the executable. A stopped/unreadable target or missing icon uses a neutral application glyph. Icons are requested at the physical DPI size and held only in memory for the current target. Target/DPI changes, unreadable targets and exit release prior bitmaps. CursorGuard writes no icon-cache files or persistent cache directory; preferences contain the executable basename, no icon bytes. Windows Shell caching is outside this guarantee and is not modified or cleared. The floating bar retains the program basename and actual state. Waiting labels say “Wait: program”. The default target remains League of Legends.exe.
+Version 1.2.4 preserves the enable-switch intention when opening settings. Editing releases the cursor; Back or a successful Done restores the prior intention and waits for a fresh eligible foreground target and stable window. Explicit pause, emergency release, quit or a save error cancels restoration. Application and Windows startup still start paused.
+
+Target display offers Program icon or Program name for both main and floating bars, defaulting to icon. Real executable names stay unchanged; long names are ellipsized with the full filename in a tooltip. Protection-state text continues to report the actual state. Icons are read from local executable resources using read-only process-path queries, never launching the target, and remain in memory only. Unavailable icons use a neutral application glyph. No icon-cache files are written. Missing legacy fields default to icon while retaining other settings.
 
 Chinese labels use installed Microsoft YaHei UI; Latin text, digits and shortcut keys use installed Segoe UI, in regular weight. Missing families fall back to the system interface font. No fonts are downloaded or bundled. Offscreen layout checks cover 125%, 150% and 200%; physical monitor DPI transitions remain unverified.
 
@@ -16,7 +18,7 @@ Chinese labels use installed Microsoft YaHei UI; Latin text, digits and shortcut
 1. Extract the complete release ZIP to a stable folder and run `CursorGuard.exe`. Every launch starts **paused**, without elevation or driver installation.
 2. Choose Settings from the gear menu, or click the main program icon to enter program selection. Settings first pauses protection and attempts release. If an owned constraint cannot be released, editing is refused and emergency shortcuts stay registered.
 3. Click the target's **Choose** button. Select a running program with a visible window, select an `.exe` file, or type an executable filename. Selecting a file never launches it.
-4. Save with **Done**, then explicitly enable protection with the switch or toggle shortcut.
+4. Save with **Done**, or cancel with **Back**. The previously enabled intention is restored; a previously paused switch stays paused. Pause, emergency release, quit or an error cancels restoration.
 5. Focus the selected program and move the cursor into its area yourself. Its valid window must remain stable for 100 ms before protection begins.
 
 The picker displays window captions and PIDs only while you use it; it does not persist them. The target is saved as an executable filename, not a full path, PID or caption. Multiple instances or windows with that name are eligible only when the particular window is the actual foreground window. Other games have not been tested.
@@ -37,7 +39,7 @@ Drag the main window to move it. The gear menu offers hide-to-tray without chang
 
 Paused, waiting, protected and error states use both text and distinct icon marks. **Protected** means the core confirmed that the current cursor rectangle matches a valid target. Merely enabling the switch does not mean protection is active.
 
-The floating bar is off by default. Enable it in settings or the tray menu. It uses the same state snapshot, shows the target name, and can be dragged. Its monitor-relative position is saved; monitor removal, work-area changes or DPI changes restore it within a visible area. Use the tray reset command if needed. Long names are ellipsized with the full executable and state in a tooltip. Nonactivation window policies are implemented; actual physical dragging and focus behavior still require manual validation. It is an ordinary topmost desktop window and may be hidden by exclusive fullscreen; it can be placed on the second monitor.
+The floating bar is off by default. Enable it in settings or the tray menu. It uses the same state snapshot, shows the selected program icon or name according to Target display, and can be dragged. Its monitor-relative position is saved; monitor removal, work-area changes or DPI changes restore it within a visible area. Use the tray reset command if needed. Long names are ellipsized with the full executable and state in a tooltip. Nonactivation window policies are implemented; actual physical dragging and focus behavior still require manual validation. It is an ordinary topmost desktop window and may be hidden by exclusive fullscreen; it can be placed on the second monitor.
 
 Appearance defaults to the Windows app theme, with light and dark overrides. System changes are normally polled within about one second. Tray icons independently follow the taskbar theme. High contrast uses system colors; unreadable theme settings fall back to light. CursorGuard does not change the Windows theme.
 
@@ -45,7 +47,7 @@ Settings use a slim rounded scrollbar with a wider hit area and no arrow buttons
 
 ## Language
 
-Open **Settings → Language** and choose **English** or **Simplified Chinese**. The selection is saved immediately and restored at the next launch. Main and floating captions, owned menus, the program picker, help, errors and shortcut-conflict messages follow the choice. User executable names and real window titles keep their original text. Windows owns the native file dialog and may display its controls in the operating-system language.
+Open **Settings → Language** and choose **中文** or **English**. The selection is saved immediately and restored at the next launch. Main and floating captions, owned menus, the program picker, help, errors and shortcut-conflict messages follow the choice. User executable names and real window titles keep their original text. Windows owns the native file dialog and may display its controls in the operating-system language.
 
 The language is stored in the existing interface preferences. Older files default to Simplified Chinese while retaining valid position, appearance and visibility fields. A failed language save keeps the previous language and restores the dropdown. Language changes do not enable protection or change target/shortcut preferences.
 

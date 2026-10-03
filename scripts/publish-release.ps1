@@ -7,8 +7,8 @@ if($env:GITHUB_ACTIONS -ne 'true' -or $env:GITHUB_REPOSITORY -ne 'RAINDAYS121/Cu
 if($env:GITHUB_SHA -notmatch '^[0-9a-f]{40}$' -or [string]::IsNullOrWhiteSpace($env:RELEASE_TOKEN)) {throw 'Missing hosted commit or token.'}
 $publishRoot=Split-Path -Parent $PSScriptRoot
 $request=Get-Content -LiteralPath (Join-Path $publishRoot '.github/release-request.json') -Raw | ConvertFrom-Json
-if($request.version -ne '1.2.3' -or $request.publish -ne $true) {throw 'No matching explicit release request.'}
-$tag='v1.2.3'
+if($request.version -ne '1.2.4' -or $request.publish -ne $true) {throw 'No matching explicit release request.'}
+$tag='v1.2.4'
 $api='https://api.github.com/repos/RAINDAYS121/CursorGuard'
 $headers=@{Authorization=('Bearer '+$env:RELEASE_TOKEN);Accept='application/vnd.github+json';'X-GitHub-Api-Version'='2026-03-10'}
 function Read-ReleaseApi([string]$path,[bool]$allow404=$false) {
@@ -62,12 +62,12 @@ function Find-Release {
   return $null
 }
 $releaseDir=Join-Path $publishRoot 'release'
-$expectedNames=@('CursorGuard-1.2.3.zip','CursorGuard-1.2.3-source.zip','SHA256SUMS.txt')
+$expectedNames=@('CursorGuard-1.2.4.zip','CursorGuard-1.2.4-source.zip','SHA256SUMS.txt')
 $hashes=@{}
 $sumLines=@(Get-Content -LiteralPath (Join-Path $releaseDir 'SHA256SUMS.txt'))
 if($sumLines.Count -ne 2) {throw 'Unexpected checksum manifest.'}
 foreach($line in $sumLines) {
-  if($line -notmatch '^([0-9a-f]{64})  (CursorGuard-1\.2\.3(?:-source)?\.zip)$' -or $hashes.ContainsKey($Matches[2])) {throw 'Invalid checksum entry.'}
+  if($line -notmatch '^([0-9a-f]{64})  (CursorGuard-1\.2\.4(?:-source)?\.zip)$' -or $hashes.ContainsKey($Matches[2])) {throw 'Invalid checksum entry.'}
   $hashes[$Matches[2]]=$Matches[1]
 }
 foreach($name in $expectedNames) {
@@ -85,7 +85,7 @@ if($null -eq $release) {
   # Read a plain string: Windows PowerShell can serialize Get-Content's
   # attached provider properties as an object rather than a JSON string.
   $notes=[IO.File]::ReadAllText((Join-Path $publishRoot 'RELEASE_NOTES.md'),[Text.Encoding]::UTF8)
-  $release=Write-ReleaseApi '/releases' 'Post' @{tag_name=$tag;target_commitish=$env:GITHUB_SHA;name='CursorGuard 1.2.3';body=$notes;draft=$true;prerelease=$false;make_latest='false'}
+  $release=Write-ReleaseApi '/releases' 'Post' @{tag_name=$tag;target_commitish=$env:GITHUB_SHA;name='CursorGuard 1.2.4';body=$notes;draft=$true;prerelease=$false;make_latest='false'}
 } elseif($null -eq $commit -and $release.target_commitish -ne $env:GITHUB_SHA) {
   # Continue only the inspected empty draft from the failed approved attempt.
   # Existing tags, published releases and drafts containing assets are protected.
@@ -121,7 +121,7 @@ $release=Read-ReleaseApi ('/releases/tags/'+$tag)
 if($release.draft -or (Tag-Commit) -ne $env:GITHUB_SHA) {throw 'Final release/commit verification failed.'}
 $finalAssets=@(Read-ReleaseApi ('/releases/'+$release.id+'/assets?per_page=100'))
 if($finalAssets.Count -ne 3) {throw 'Unexpected published asset count.'}
-$downloadDir=Join-Path $env:RUNNER_TEMP ('CursorGuard-1.2.3-download-check-'+[Guid]::NewGuid().ToString('N'))
+$downloadDir=Join-Path $env:RUNNER_TEMP ('CursorGuard-1.2.4-download-check-'+[Guid]::NewGuid().ToString('N'))
 New-Item -ItemType Directory -Path $downloadDir | Out-Null
 foreach($name in $expectedNames) {
   $remote=@($finalAssets | Where-Object {$_.name -eq $name})
