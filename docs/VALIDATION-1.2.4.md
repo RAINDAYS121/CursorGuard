@@ -1,6 +1,6 @@
 # CursorGuard 1.2.4 validation
 
-148 automatic regressions pass with warnings treated as errors. The 16 new
+150 automatic regressions pass with warnings treated as errors. The 16 new
 cases cover repeated settings entry, enabled/paused restoration, Back/Done and
 window-close handlers, shortcut editing, persistence/validation/registration
 errors, release failure, emergency/pause/quit precedence, fresh foreground and

@@ -17,7 +17,7 @@ memory-only; legacy files lacking the display field retain other preferences.
 主动暂停、紧急释放、退出或错误优先。语言选项固定为“中文 / English”。
 新增主界面和悬浮条“程序图标 / 程序名称”，默认图标；保留实际状态与程序本名。
 
-Validation: 148 automatic regressions, including 16 new settings/display cases,
+Validation: 150 automatic regressions, including 16 new settings/display cases,
 bilingual offscreen rendering and an independent rebuild of the source ZIP.
 No live game, actual hotkeys, physical pointer/focus, monitor DPI transitions or
 anti-cheat compatibility validation was performed during the ongoing game.

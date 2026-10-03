@@ -25,7 +25,7 @@ From the project root:
 
 Build uses warning level 4 with warnings as errors. Verify launches hidden subprocesses only in `--self-test`, `--render-preview` and `--render-preview-en` modes. It does not create the guard worker, register real hotkeys, write a cursor constraint, show the app or send input. Output is `test-results.json`, `verification.json` and ignored `artifacts/validation-previews/`. Verification does not overwrite the committed illustrative previews.
 
-1.2.4 runs 148 checks, including 18 language tests and 16 settings/display regressions. They cover preference roundtrip, migration of absent/unknown language values, successful and failed saves, dropdown commitment, state/target preservation, English conflicts/errors, and both themes at 100%, 125%, 150% and 200%. Language test files are unique temporary fixtures inside the chosen test-output directory, removed on completion. They never read or write the user's effective preferences.
+1.2.4 runs 150 checks, including 18 language tests and 16 settings/display regressions. They cover preference roundtrip, migration of absent/unknown language values, successful and failed saves, dropdown commitment, state/target preservation, English conflicts/errors, and both themes at 100%, 125%, 150% and 200%. Language test files are unique temporary fixtures inside the chosen test-output directory, removed on completion. They never read or write the user's effective preferences.
 
 验证仅使用模拟后端、隐藏托管控件、独立临时配置和离屏绘制。不会启动正常窗口、保护线程、真实快捷键或鼠标操作。当前用户的配置和运行目录保持不变。
 

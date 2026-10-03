@@ -1,6 +1,6 @@
 # Validation / 验证说明
 
-Version 1.2.4 passes 148 automatic regressions with warnings treated as errors.
+Version 1.2.4 passes 150 automatic regressions with warnings treated as errors.
 The final corresponding source ZIP is independently extracted, rebuilt and
 verified with the same suite. See [VALIDATION-1.2.4.md](VALIDATION-1.2.4.md).
 
@@ -25,7 +25,7 @@ Previous 1.2.2 own-window native diagnostics are historical and were not repeate
 - Real hotkeys, game/fullscreen/anti-cheat behavior and Alt+Tab timing.
 - Recovery after forced termination or operating-system hangs.
 
-148 项自动检查与源码包独立重建通过，不等同于真实游戏或物理输入验证。
+150 项自动检查与源码包独立重建通过，不等同于真实游戏或物理输入验证。
 最初自然越界的根因尚未确认，未宣称反作弊官方认可。
 
 Start paused, select a target without running it, save settings and enable

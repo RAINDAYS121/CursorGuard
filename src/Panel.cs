@@ -243,10 +243,6 @@ namespace LoLMouseGuard
         public ControlPanel(IUiSession source,bool offscreen,bool startInTray,bool nativeOnlyPreview=false)
         {
             session=source; preview=offscreen;nativePreview=nativeOnlyPreview;startupHidden=startInTray;view=source.ReadView();
-            // WinForms clamps even invisible top-level forms to the host's
-            // MaxWindowTrackSize. Pure bitmap previews use synthetic geometry;
-            // native probes and live windows retain their top-level behavior.
-            if(preview && !nativePreview) TopLevel=false;
             Text=UiText.T("CursorGuard · 鼠标守卫"); ShowIcon=false; ClientSize=new Size(320,44); BackColor=Theme.Background;
             Font=UiText.ControlFont; AutoScaleDimensions=new SizeF(96,96); AutoScaleMode=preview?AutoScaleMode.None:AutoScaleMode.Dpi;
             StartPosition=FormStartPosition.CenterScreen; FormBorderStyle=FormBorderStyle.None; MaximizeBox=false; DoubleBuffered=true;
@@ -320,6 +316,14 @@ namespace LoLMouseGuard
         [DllImport("user32.dll")] static extern bool ReleaseCapture();
         [DllImport("user32.dll")] static extern IntPtr SendMessage(IntPtr handle,uint message,IntPtr wParam,IntPtr lParam);
         protected override void OnMouseDown(MouseEventArgs e) {base.OnMouseDown(e);if(!preview && e.Button==MouseButtons.Left) {ReleaseCapture();SendMessage(Handle,0x00A1,new IntPtr(2),IntPtr.Zero);} }
+        protected override void SetBoundsCore(int x,int y,int width,int height,BoundsSpecified specified)
+        {
+            // Form.SetBoundsCore always clamps to MaxWindowTrackSize, including
+            // invisible forms. Pure previews have no HWND or nonclient border;
+            // update their managed bounds to honor the synthetic work area.
+            if(preview && !nativePreview && !IsHandleCreated) {UpdateBounds(x,y,width,height,width,height);return;}
+            base.SetBoundsCore(x,y,width,height,specified);
+        }
         protected override void OnSizeChanged(EventArgs e)
         {
             base.OnSizeChanged(e);if(ClientSize.Width<2 || ClientSize.Height<2) return;

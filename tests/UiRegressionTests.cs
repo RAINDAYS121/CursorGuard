@@ -34,6 +34,20 @@ namespace LoLMouseGuard
         {
             List<SelfTests.Check> checks=new List<SelfTests.Check>();
             Action<string,Action> test=delegate(string name,Action action) {SelfTests.Check check=new SelfTests.Check {name=name};try {action();check.passed=true;}catch(Exception e){check.error=e.ToString();}checks.Add(check);};
+            test("offscreen_geometry_exceeds_host_tracking_limit_without_creating_window",delegate {
+                using(ControlPanel form=new ControlPanel(new PreviewSession(Previews.State("settings")),true,false)) {form.PreviewSettings();Size desired=new Size(380,SystemInformation.MaxWindowTrackSize.Height+40);form.ClientSize=desired;Check(form.ClientSize==desired && !form.IsHandleCreated,"Synthetic preview was clipped: actual="+form.ClientSize+" expected="+desired+" maxTrack="+SystemInformation.MaxWindowTrackSize);}
+            });
+            test("settings_respect_actual_host_form_limit_and_keep_last_row_accessible",delegate {
+                Size maximum=SystemInformation.MaxWindowTrackSize;
+                using(Form host=new Form {FormBorderStyle=FormBorderStyle.None,AutoScaleMode=AutoScaleMode.None}) {
+                    host.Bounds=new Rectangle(0,0,760,maximum.Height+40);Check(host.Height<=maximum.Height && !host.IsHandleCreated,"Unshown host form did not retain its OS limit");Rectangle work=new Rectangle(Point.Empty,host.Size);
+                    using(ControlPanel form=new ControlPanel(new PreviewSession(Previews.State("settings")),true,false)) {
+                        using(Bitmap scaled=form.RenderPreview(2)) {}form.PreviewOpenSettingsAt(new Rectangle(Point.Empty,form.ClientSize),work,2);form.PreviewRefresh();Check(work.Contains(form.Bounds),"Settings overflow actual host bounds");Check(form.PreviewScrollRequired==(work.Height<804),"Scroll state ignores actual available height");
+                        form.PreviewScrollToTargetDisplay();Check(form.PreviewTargetDisplayChoice.Parent.ClientRectangle.Contains(form.PreviewTargetDisplayChoice.Bounds),"Last settings row is unreachable");
+                        foreach(Control child in form.Controls) if(child is PlainButton && (child.Text=="‹ 返回" || child.Text=="完成" || child.Text=="···")) Check(form.ClientRectangle.Contains(child.Bounds) && child.Bottom<=80,"Header overflows actual host bounds");Check(!form.IsHandleCreated,"Host-limit test created a window");
+                    }
+                }
+            });
             test("settings_below_then_above_restores_main_anchor",delegate {
                 Rectangle work=new Rectangle(0,0,1920,1040),top=new Rectangle(30,20,285,44),bottom=new Rectangle(1700,970,285,44);
                 Rectangle down=SettingsPlacement.Calculate(top,work,new Size(380,402),1),up=SettingsPlacement.Calculate(bottom,work,new Size(380,402),1);
