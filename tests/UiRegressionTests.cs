@@ -1,4 +1,4 @@
-// SPDX-License-Identifier: GPL-3.0-only
+﻿// SPDX-License-Identifier: GPL-3.0-only
 // Copyright (c) 2026 RAINDAYS121.
 using System;
 using System.Collections.Generic;
@@ -104,10 +104,10 @@ namespace LoLMouseGuard
                     View view=Previews.State("settings");RecordingSession session=new RecordingSession(view);
                     foreach(Point corner in new[] {work.Location,new Point(work.Right-400,work.Top),new Point(work.Left,work.Bottom-100),new Point(work.Right-400,work.Bottom-100)}) using(ControlPanel form=new ControlPanel(session,true,false)) {
                         using(Bitmap initial=form.RenderPreview(scale)) {}Size mainSize=form.ClientSize;Rectangle main=new Rectangle(corner,mainSize);
-                        form.PreviewOpenSettingsAt(main,work,scale);form.PreviewRefresh();Check(work.Contains(form.Bounds));
-                        foreach(Control child in form.Controls) if(child is PlainButton && (child.Text=="‹ 返回" || child.Text=="完成" || child.Text=="···")) {Check(form.ClientRectangle.Contains(child.Bounds));Check(child.Bottom<=(int)Math.Round(40*scale));}
-                        Check(form.PreviewScrollRequired==(work.Height<(int)Math.Round(402*scale)));
-                        form.PreviewReturn();Check(form.Location==main.Location && form.ClientSize==mainSize && session.Commands.Count==0 && !form.IsHandleCreated);
+                        form.PreviewOpenSettingsAt(main,work,scale);form.PreviewRefresh();string geometry="scale="+scale+" work="+work+" anchor="+main+" actual="+form.Bounds+" client="+form.ClientSize+" maxTrack="+SystemInformation.MaxWindowTrackSize;Check(work.Contains(form.Bounds),"settings placement: "+geometry);
+                        foreach(Control child in form.Controls) if(child is PlainButton && (child.Text=="‹ 返回" || child.Text=="完成" || child.Text=="···")) {Check(form.ClientRectangle.Contains(child.Bounds),"header bounds "+child.Text+" "+child.Bounds+" "+geometry);Check(child.Bottom<=(int)Math.Round(40*scale),"header height "+child.Text+" "+child.Bounds+" expected="+Math.Round(40*scale)+" "+geometry);}
+                        Check(form.PreviewScrollRequired==(work.Height<(int)Math.Round(402*scale)),"scroll requirement actual="+form.PreviewScrollRequired+" expected="+(work.Height<(int)Math.Round(402*scale))+" "+geometry);
+                        form.PreviewReturn();Check(form.Location==main.Location && form.ClientSize==mainSize && session.Commands.Count==0 && !form.IsHandleCreated,"settings return actual="+form.Bounds+" expected location="+main.Location+" expected size="+mainSize+" "+geometry);
                     }
                 }
             });
