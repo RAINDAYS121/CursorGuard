@@ -53,7 +53,7 @@ function Find-Release {
   $found=@()
   for($page=1;$page -le 100;$page++) {
     $batch=@(Read-ReleaseApi ('/releases?per_page=100&page='+$page))
-    $found+=@($batch | Where-Object {$_.tag_name -eq $tag})
+    $found+=@($batch | Where-Object {$_.tag_name -eq $tag -or ($request.resume_empty_draft -and $_.id -eq $request.resume_empty_draft.id -and $_.tag_name -eq $request.resume_empty_draft.previous_tag)})
     if($batch.Count -lt 100) {break}
     if($page -eq 100) {throw 'Release listing limit reached; no speculative creation will be attempted.'}
   }
@@ -93,7 +93,7 @@ if($null -eq $release) {
   if(-not $release.draft -or $release.id -ne $resume.id -or $release.target_commitish -ne $resume.previous_target -or $resume.previous_target -notmatch '^[0-9a-f]{40}$') {throw 'Existing draft targets a different commit.'}
   $draftAssets=@(Read-ReleaseApi ('/releases/'+$release.id+'/assets?per_page=100'))
   if($draftAssets.Count -ne 0) {throw 'The inspected draft now contains assets; its commit will not be changed.'}
-  $release=Write-ReleaseApi ('/releases/'+$release.id) 'Patch' @{target_commitish=$env:GITHUB_SHA}
+  $release=Write-ReleaseApi ('/releases/'+$release.id) 'Patch' @{tag_name=$tag;target_commitish=$env:GITHUB_SHA;draft=$true}
   if(-not $release.draft -or $release.target_commitish -ne $env:GITHUB_SHA) {throw 'Draft commit update could not be verified.'}
 }
 if($release.tag_name -ne $tag) {throw 'Unexpected release tag.'}
@@ -116,7 +116,7 @@ foreach($name in $expectedNames) {
   catch {throw 'Asset upload failed. Inspect remote assets before retrying; no deletion will be attempted.'}
   if($uploaded.name -ne $name -or $uploaded.size -ne $size -or $uploaded.digest -ne ('sha256:'+$hashes[$name])) {throw 'Uploaded asset hash verification failed; draft remains unpublished.'}
 }
-if($release.draft) {$release=Write-ReleaseApi ('/releases/'+$release.id) 'Patch' @{draft=$false;make_latest='true'}}
+if($release.draft) {$release=Write-ReleaseApi ('/releases/'+$release.id) 'Patch' @{tag_name=$tag;target_commitish=$env:GITHUB_SHA;draft=$false;prerelease=$false;make_latest='true'}}
 $release=Read-ReleaseApi ('/releases/tags/'+$tag)
 if($release.draft -or (Tag-Commit) -ne $env:GITHUB_SHA) {throw 'Final release/commit verification failed.'}
 $finalAssets=@(Read-ReleaseApi ('/releases/'+$release.id+'/assets?per_page=100'))
