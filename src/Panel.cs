@@ -243,9 +243,10 @@ namespace LoLMouseGuard
         public ControlPanel(IUiSession source,bool offscreen,bool startInTray,bool nativeOnlyPreview=false)
         {
             session=source; preview=offscreen;nativePreview=nativeOnlyPreview;startupHidden=startInTray;view=source.ReadView();
-            // Hidden bitmap previews must not inherit the host monitor's
-            // maximum tracking size. Live windows keep normal OS limits.
-            if(preview) MaximumSize=new Size(4096,4096);
+            // WinForms clamps even invisible top-level forms to the host's
+            // MaxWindowTrackSize. Pure bitmap previews use synthetic geometry;
+            // native probes and live windows retain their top-level behavior.
+            if(preview && !nativePreview) TopLevel=false;
             Text=UiText.T("CursorGuard · 鼠标守卫"); ShowIcon=false; ClientSize=new Size(320,44); BackColor=Theme.Background;
             Font=UiText.ControlFont; AutoScaleDimensions=new SizeF(96,96); AutoScaleMode=preview?AutoScaleMode.None:AutoScaleMode.Dpi;
             StartPosition=FormStartPosition.CenterScreen; FormBorderStyle=FormBorderStyle.None; MaximizeBox=false; DoubleBuffered=true;

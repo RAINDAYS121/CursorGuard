@@ -1,4 +1,4 @@
-﻿// SPDX-License-Identifier: GPL-3.0-only
+// SPDX-License-Identifier: GPL-3.0-only
 // Copyright (c) 2026 RAINDAYS121.
 using System;
 using System.Collections.Generic;
