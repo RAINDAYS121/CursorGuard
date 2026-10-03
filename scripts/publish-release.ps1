@@ -18,12 +18,31 @@ function Read-ReleaseApi([string]$path,[bool]$allow404=$false) {
 function Write-ReleaseApi([string]$path,[string]$method,[object]$body) {
   try {return Invoke-RestMethod -Uri ($api+$path) -Headers $headers -Method $method -ContentType 'application/json; charset=utf-8' -Body ([Text.Encoding]::UTF8.GetBytes(($body | ConvertTo-Json -Depth 6)))}
   catch {
-    $status='unavailable';if($_.Exception.Response) {$status=[int]$_.Exception.Response.StatusCode}
+    $failure=$_
+    $status='unavailable';if($failure.Exception.Response) {$status=[int]$failure.Exception.Response.StatusCode}
     $serverMessage='No server message'
-    try {$errorBody=$_.ErrorDetails.Message | ConvertFrom-Json;if($errorBody.message) {$serverMessage=[string]$errorBody.message}} catch {}
+    $errorText=[string]$failure.ErrorDetails.Message
+    $errorBody=$null
+    try {$errorBody=$errorText | ConvertFrom-Json} catch {}
+    if($null -eq $errorBody -and $failure.Exception.Response) {
+      try {
+        $response=$failure.Exception.Response
+        if($response.PSObject.Methods['GetResponseStream']) {
+          $reader=New-Object IO.StreamReader($response.GetResponseStream())
+          try {$errorText=$reader.ReadToEnd()} finally {$reader.Dispose()}
+        } elseif($response.Content) {$errorText=$response.Content.ReadAsStringAsync().GetAwaiter().GetResult()}
+        $errorBody=$errorText | ConvertFrom-Json
+      } catch {}
+    }
+    if($errorBody.message) {$serverMessage=[string]$errorBody.message}
+    foreach($validation in @($errorBody.errors)) {
+      $fields=@()
+      foreach($key in @('resource','field','code','message')) {if($validation.$key) {$fields+=($key+'='+[string]$validation.$key)}}
+      if($fields.Count -gt 0) {$serverMessage+=' ['+($fields -join ', ')+']'}
+    }
     $serverMessage=$serverMessage.Replace($env:RELEASE_TOKEN,'[redacted]') -replace '[\r\n\x00-\x1f]',' '
-    if($serverMessage.Length -gt 200) {$serverMessage=$serverMessage.Substring(0,200)}
-    throw ('GitHub publication request failed (HTTP '+$status+'): '+$serverMessage+'. Inspect the remote result before retrying; existing assets are never deleted.')
+    if($serverMessage.Length -gt 600) {$serverMessage=$serverMessage.Substring(0,600)}
+    throw ('GitHub publication request failed ('+$method+' '+$path+', HTTP '+$status+'): '+$serverMessage+'. Inspect the remote result before retrying; existing assets are never deleted.')
   }
 }
 function Tag-Commit {
