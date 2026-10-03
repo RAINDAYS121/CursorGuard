@@ -12,7 +12,13 @@ $tag='v1.2.3'
 $api='https://api.github.com/repos/RAINDAYS121/CursorGuard'
 $headers=@{Authorization=('Bearer '+$env:RELEASE_TOKEN);Accept='application/vnd.github+json';'X-GitHub-Api-Version'='2026-03-10'}
 function Read-ReleaseApi([string]$path,[bool]$allow404=$false) {
-  try {return Invoke-RestMethod -Uri ($api+$path) -Headers $headers -Method Get}
+  try {
+    $response=Invoke-RestMethod -Uri ($api+$path) -Headers $headers -Method Get
+    # Invoke-RestMethod emits a JSON array as one pipeline object. Enumerate
+    # explicitly so an empty asset list stays empty for the conflict checks.
+    if($response -is [Array]) {foreach($entry in $response) {Write-Output $entry};return}
+    return $response
+  }
   catch {if($allow404 -and $_.Exception.Response -and [int]$_.Exception.Response.StatusCode -eq 404) {return $null};throw 'GitHub read failed. No speculative write will be attempted.'}
 }
 function Write-ReleaseApi([string]$path,[string]$method,[object]$body) {
@@ -80,7 +86,16 @@ if($null -eq $release) {
   # attached provider properties as an object rather than a JSON string.
   $notes=[IO.File]::ReadAllText((Join-Path $publishRoot 'RELEASE_NOTES.md'),[Text.Encoding]::UTF8)
   $release=Write-ReleaseApi '/releases' 'Post' @{tag_name=$tag;target_commitish=$env:GITHUB_SHA;name='CursorGuard 1.2.3';body=$notes;draft=$true;prerelease=$false;make_latest='false'}
-} elseif($null -eq $commit -and $release.target_commitish -ne $env:GITHUB_SHA) {throw 'Existing draft targets a different commit.'}
+} elseif($null -eq $commit -and $release.target_commitish -ne $env:GITHUB_SHA) {
+  # Continue only the inspected empty draft from the failed approved attempt.
+  # Existing tags, published releases and drafts containing assets are protected.
+  $resume=$request.resume_empty_draft
+  if(-not $release.draft -or $release.id -ne $resume.id -or $release.target_commitish -ne $resume.previous_target -or $resume.previous_target -notmatch '^[0-9a-f]{40}$') {throw 'Existing draft targets a different commit.'}
+  $draftAssets=@(Read-ReleaseApi ('/releases/'+$release.id+'/assets?per_page=100'))
+  if($draftAssets.Count -ne 0) {throw 'The inspected draft now contains assets; its commit will not be changed.'}
+  $release=Write-ReleaseApi ('/releases/'+$release.id) 'Patch' @{target_commitish=$env:GITHUB_SHA}
+  if(-not $release.draft -or $release.target_commitish -ne $env:GITHUB_SHA) {throw 'Draft commit update could not be verified.'}
+}
 if($release.tag_name -ne $tag) {throw 'Unexpected release tag.'}
 $initialAssets=@(Read-ReleaseApi ('/releases/'+$release.id+'/assets?per_page=100'))
 if(@($initialAssets | Where-Object {$_.name -notin $expectedNames}).Count -gt 0) {throw 'Unexpected existing assets; no replacement or deletion will be attempted.'}
