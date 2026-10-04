@@ -1,83 +1,42 @@
-# CursorGuard 1.2.4
+# CursorGuard
 
-[Chinese](README.md) · [Build and test](BUILDING.md) · [Validation limits](docs/VALIDATION.md)
+[中文](README.md) · [Detailed guide](docs/README.en.md)
 
-A Windows 10/11 desktop utility that confines the cursor to the valid client area of your selected foreground program. League of Legends is the default; other games or applications can be selected. The capsule window and optional floating bar display the selected program and actual state.
-
-Version 1.2.4 preserves the enable-switch intention when opening settings. Editing releases the cursor; Back or a successful Done restores the prior intention and waits for a fresh eligible foreground target and stable window. Explicit pause, emergency release, quit or a save error cancels restoration. Application and Windows startup still start paused.
-
-Target display offers Program icon or Program name for both main and floating bars, defaulting to icon. Real executable names stay unchanged; long names are ellipsized with the full filename in a tooltip. Protection-state text continues to report the actual state. Icons are read from local executable resources using read-only process-path queries, never launching the target, and remain in memory only. Unavailable icons use a neutral application glyph. No icon-cache files are written. Missing legacy fields default to icon while retaining other settings.
-
-Chinese labels use installed Microsoft YaHei UI; Latin text, digits and shortcut keys use installed Segoe UI, in regular weight. Missing families fall back to the system interface font. No fonts are downloaded or bundled. Offscreen layout checks cover 125%, 150% and 200%; physical monitor DPI transitions remain unverified.
+A Windows 10/11 utility that confines the cursor to your selected foreground game or application, helping prevent accidental movement onto a second monitor.
 
 ![Dark main window](previews/en/preview-paused-dark.png)
 ![Settings](previews/en/preview-settings.png)
 
-## Getting started
+## Download and quick start
 
-1. Extract the complete release ZIP to a stable folder and run `CursorGuard.exe`. Every launch starts **paused**, without elevation or driver installation.
-2. Choose Settings from the gear menu, or click the main program icon to enter program selection. Settings first pauses protection and attempts release. If an owned constraint cannot be released, editing is refused and emergency shortcuts stay registered.
-3. Click the target's **Choose** button. Select a running program with a visible window, select an `.exe` file, or type an executable filename. Selecting a file never launches it.
-4. Save with **Done**, or cancel with **Back**. The previously enabled intention is restored; a previously paused switch stays paused. Pause, emergency release, quit or an error cancels restoration.
-5. Focus the selected program and move the cursor into its area yourself. Its valid window must remain stable for 100 ms before protection begins.
+[Download v1.2.4](https://github.com/RAINDAYS121/CursorGuard/releases/download/v1.2.4/CursorGuard-1.2.4.zip) · [All releases, source and checksums](https://github.com/RAINDAYS121/CursorGuard/releases)
 
-The picker displays window captions and PIDs only while you use it; it does not persist them. The target is saved as an executable filename, not a full path, PID or caption. Multiple instances or windows with that name are eligible only when the particular window is the actual foreground window. Other games have not been tested.
-
-## Controls
+1. Extract the complete package and run `CursorGuard.exe`. No installation or administrator access is required. Each launch starts paused.
+2. Open **Settings**, choose the target program, and save with **Done**. League of Legends is the default.
+3. Turn on the enable switch or press `Ctrl + Alt + F8`, then focus the target and move the cursor into its window.
+4. Confirm that the state says **Protected**. Switching away or pausing releases the cursor.
 
 | Default shortcut | Action |
 | --- | --- |
 | `Ctrl + Alt + F8` | Enable / pause |
-| `Ctrl + Alt + F9` | Force emergency release and pause |
+| `Ctrl + Alt + F9` | Emergency release and pause |
 | `Ctrl + Alt + F10` | Quit |
 
-Change shortcuts in settings, using Ctrl or Alt with a regular key. Duplicate combinations, some system keys and registration conflicts are rejected. Failed saves attempt to restore the previous settings. Global shortcuts are temporarily unregistered during editing; `Alt + F4` still closes the panel. Normal Alt+Tab away from the target releases this tool's constraint on the next background check.
+## Features
 
-Drag the main window to move it. The gear menu offers hide-to-tray without changing protection or floating visibility; finish or cancel settings editing before hiding. Double-click the tray icon to open it. The tray menu provides pause, emergency release, settings, floating visibility/reset and quit. The settings **···** menu includes hide, default shortcuts, details and quit.
+- Select a game or application while keeping the second monitor active.
+- See the actual protection state, with an optional floating bar and program icon or name display.
+- Choose 中文 / English, light or dark appearance, custom shortcuts and optional Windows startup.
+- Settings editing releases the cursor; Done or Back restores the previous enable intention.
 
-## State, floating bar and appearance
+## Usage notes
 
-Paused, waiting, protected and error states use both text and distinct icon marks. **Protected** means the core confirmed that the current cursor rectangle matches a valid target. Merely enabling the switch does not mean protection is active.
+- To stop immediately, use emergency release or the tray menu. While editing settings, `Alt + F4` quits.
+- Exit the old version normally before extracting an update into a new folder. Do not overwrite a running copy.
+- Live gameplay and anti-cheat compatibility remain unconfirmed; try it outside a match first. Exclusive fullscreen may hide the floating bar.
 
-The floating bar is off by default. Enable it in settings or the tray menu. It uses the same state snapshot, shows the selected program icon or name according to Target display, and can be dragged. Its monitor-relative position is saved; monitor removal, work-area changes or DPI changes restore it within a visible area. Use the tray reset command if needed. Long names are ellipsized with the full executable and state in a tooltip. Nonactivation window policies are implemented; actual physical dragging and focus behavior still require manual validation. It is an ordinary topmost desktop window and may be hidden by exclusive fullscreen; it can be placed on the second monitor.
+## Documentation and license
 
-Appearance defaults to the Windows app theme, with light and dark overrides. System changes are normally polled within about one second. Tray icons independently follow the taskbar theme. High contrast uses system colors; unreadable theme settings fall back to light. CursorGuard does not change the Windows theme.
+[Full guide and troubleshooting](docs/README.en.md) · [Validation limits](docs/VALIDATION.md) · [Build and test](BUILDING.md) · [Changelog](CHANGELOG.md)
 
-Settings use a slim rounded scrollbar with a wider hit area and no arrow buttons. Wheel, thumb drag, keyboard paging and focus reveal keep long settings accessible. The thumb is hidden when content fits; content width stays fixed.
-
-## Language
-
-Open **Settings → Language** and choose **中文** or **English**. The selection is saved immediately and restored at the next launch. Main and floating captions, owned menus, the program picker, help, errors and shortcut-conflict messages follow the choice. User executable names and real window titles keep their original text. Windows owns the native file dialog and may display its controls in the operating-system language.
-
-The language is stored in the existing interface preferences. Older files default to Simplified Chinese while retaining valid position, appearance and visibility fields. A failed language save keeps the previous language and restores the dropdown. Language changes do not enable protection or change target/shortcut preferences.
-
-These English previews are drawn by the application's actual English renderer using explicitly simulated states. No image text replacement or desktop capture is used.
-
-![English floating states](previews/en/preview-floating.png)
-![English program picker](previews/en/preview-program-picker.png)
-
-## Startup and compatibility
-
-Startup is off by default. Opting in writes only the current user's `HKCU\Software\Microsoft\Windows\CurrentVersion\Run\LoLMouseGuard` value. Login launches quietly to the tray and still starts paused. Saving unrelated settings preserves an existing startup path. After moving the executable, explicitly disable startup and save, then enable it and save to update that path.
-
-Legacy paths and single-instance identity are retained: `%APPDATA%\LoLMouseGuard\settings.json` for shortcuts/target, and `floating.json` for interface preferences. Old files without the new fields default to League of Legends, system appearance and Simplified Chinese. Exit an older running version normally before launching this one; do not overwrite its active folder.
-
-## How it works
-
-Public Win32 APIs read foreground window identity, executable filename, client coordinates, monitor bounds and cursor position. Client coordinates are converted to physical screen coordinates and intersected with the window's monitor and virtual desktop. Negative coordinates are supported; uncertain DPI initialization blocks enabling. Moving, resizing and switching monitors trigger fresh coordinates and a new stabilization period. No manual screen coordinates are required.
-
-An independent thread targets a 20 ms check interval. When a constraint is lost, it reapplies `ClipCursor` only if foreground identity, geometry and cursor conditions remain valid. It checks the window/PID again before applying and rechecks foreground afterwards. Focus loss, minimization, invalid geometry, pause or normal exit release this tool's rectangle. Scheduling can delay checks: 20 ms is a target, not a measured guarantee. An outside cursor is never deliberately moved back.
-
-`ClipCursor` has no public owner identity. Normal cleanup preserves a different rectangle installed later by another application. The emergency command explicitly forces release. There is no injection, game-memory reading, input hook, anti-cheat/security modification, background networking, telemetry or automatic updater.
-
-## Troubleshooting
-
-- **Always waiting:** select the actual program executable, not its launcher. It must be foreground, not minimized, with the cursor inside a valid area. Tiny windows below 64 × 64 and unreadable coordinates are rejected.
-- **Shortcut error:** use settings **··· → Details and help**, select an unused combination, then explicitly enable again.
-- **Missing floating bar:** enable/reset it from the tray. Exclusive fullscreen can obscure desktop windows; use the second monitor if desired.
-- **Stop now:** use emergency release, the tray emergency command, or normal Alt+Tab away, then quit.
-- **Forced termination or OS hang:** normal cleanup cannot guarantee recovery when code cannot run.
-
-## Development and license
-
-Build and test instructions: [BUILDING.md](BUILDING.md). Licensed under [GPLv3 (GPL-3.0-only)](LICENSE). Copyright © 2026 RAINDAYS121.
+Licensed under [GPLv3 (GPL-3.0-only)](LICENSE). Copyright © 2026 RAINDAYS121.
