@@ -14,8 +14,9 @@ namespace LoLMouseGuard
         static void Check(bool value,string detail) {if(!value) throw new Exception(detail);}
         static void EnglishControls(Control parent,string rawTarget)
         {
-            if(!(parent is TextBox) && !(parent is ProgramIconButton) && !(parent is ComboBox && parent.Text=="中文")) Check(!UiText.HasChinese(parent.Text),"Chinese owned caption: "+parent.Text);
-            if(parent is TextBox) Check(parent.Text==rawTarget,"Target changed");
+            bool userTarget=parent is TextBox || parent is ComboBox && ((ComboBox)parent).DropDownStyle==ComboBoxStyle.DropDown;
+            if(!userTarget && !(parent is ProgramIconButton) && !(parent is ComboBox && parent.Text=="中文")) Check(!UiText.HasChinese(parent.Text),"Chinese owned caption: "+parent.Text);
+            if(userTarget) Check(parent.Text==rawTarget,"Target changed: actual="+parent.Text+", expected="+rawTarget);
             if(!(parent is ProgramIconButton)) Check(!UiText.HasChinese(parent.AccessibleName),"Chinese accessible label");
             foreach(Control child in parent.Controls) EnglishControls(child,rawTarget);
         }
@@ -37,7 +38,7 @@ namespace LoLMouseGuard
                 finally {if(File.Exists(file)) File.Delete(file);if(Directory.Exists(directory) && Directory.GetFileSystemEntries(directory).Length==0) Directory.Delete(directory);}
             });
             test("language_switch_both_directions_preserves_custom_name_and_protection",delegate {
-                MemoryFloatingStore store=new MemoryFloatingStore();View view=Previews.State("protected");view.Settings.TargetExecutable="设置我的游戏.exe";string keys=view.Settings.Toggle.Display();
+                MemoryFloatingStore store=new MemoryFloatingStore();View view=Previews.State("protected");view.Settings.TargetExecutable="设置我的游戏.exe";view.ActiveExecutable=view.Settings.TargetExecutable;string keys=view.Settings.Toggle.Display();
                 using(FloatingController saved=new FloatingController(store,delegate {throw new Exception("Window must not be created");}))
                 using(ControlPanel form=new ControlPanel(new PreviewSession(view),true,false)) {form.PreviewSettings();for(int i=0;i<6;i++) {int index=i%2==0?1:0;form.PreviewCommitLanguage(saved,index);Check(UiText.Language==(index==1?"en":"zh-CN") && saved.Preferences.Language==UiText.Language && form.PreviewLanguageChoice.SelectedIndex==index,"Language not committed");Check(view.Enabled && view.Status=="保护中" && view.Settings.TargetExecutable=="设置我的游戏.exe" && view.Settings.Toggle.Display()==keys,"Language changed protection or target");if(index==1) {EnglishControls(form,view.Settings.TargetExecutable);EnglishMenu(form.PreviewPanelMenu);}Check(!form.IsHandleCreated,"Language switch created native window");}}
             });

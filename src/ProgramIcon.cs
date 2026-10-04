@@ -12,7 +12,8 @@ namespace LoLMouseGuard
 {
     sealed class IconDescriptor {public string Path;public long Stamp;}
     interface IProgramIconSource {IconDescriptor Resolve(string executable);Bitmap Extract(string path,int pixels);}
-    sealed class NativeProgramIconSource : IProgramIconSource
+    interface IActiveProgramIconSource {IconDescriptor Resolve(string executable,uint pid);}
+    sealed class NativeProgramIconSource : IProgramIconSource,IActiveProgramIconSource
     {
         [DllImport("shell32.dll",CharSet=CharSet.Unicode)] static extern int SHDefExtractIconW(string file,int index,uint flags,out IntPtr large,out IntPtr small,uint sizes);
         [DllImport("user32.dll")] static extern bool DestroyIcon(IntPtr icon);
@@ -21,6 +22,13 @@ namespace LoLMouseGuard
             IntPtr process=Native.OpenProcess(0x1000,false,pid);if(process==IntPtr.Zero) return null;
             try {StringBuilder path=new StringBuilder(32768);int length=path.Capacity;if(Native.QueryFullProcessImageName(process,0,path,ref length) && String.Equals(System.IO.Path.GetFileName(path.ToString()),executable,StringComparison.OrdinalIgnoreCase)) return path.ToString();}
             finally {Native.CloseHandle(process);}return null;
+        }
+        public IconDescriptor Resolve(string executable,uint pid)
+        {
+            if(String.IsNullOrEmpty(executable) || pid==0) return null;
+            string path=PathFor(pid,executable);
+            if(path==null || path.StartsWith(@"\\",StringComparison.Ordinal) || !File.Exists(path)) return null;
+            return new IconDescriptor {Path=path,Stamp=File.GetLastWriteTimeUtc(path).Ticks};
         }
         public IconDescriptor Resolve(string executable)
         {
@@ -57,13 +65,15 @@ namespace LoLMouseGuard
         public ProgramIconCache(IProgramIconSource provider) {source=provider;}
         void ClearImage() {if(currentImage!=null) currentImage.Dispose();currentImage=null;currentKey=null;}
         public void Reset() {lock(gate) {generation++;ClearImage();}}
-        public Bitmap Read(string executable,int pixels)
+        public Bitmap Read(string executable,int pixels) {return Read(executable,pixels,0);}
+        public Bitmap Read(string executable,int pixels,uint pid)
         {
             long requested;lock(gate) {if(disposed) return null;requested=generation;}
             Bitmap extracted=null;
             try
             {
-                IconDescriptor icon=source.Resolve(executable);
+                IActiveProgramIconSource active=source as IActiveProgramIconSource;
+                IconDescriptor icon=String.IsNullOrEmpty(executable)?null:pid!=0 && active!=null?active.Resolve(executable,pid):source.Resolve(executable);
                 string key=icon==null || String.IsNullOrEmpty(icon.Path)?null:icon.Path+"|"+icon.Stamp+"|"+pixels;
                 lock(gate)
                 {

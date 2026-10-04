@@ -17,6 +17,13 @@ namespace LoLMouseGuard
         public static void SetLanguage(string choice) {if(!Supported(choice)) throw new ArgumentException("Unsupported language");english=choice=="en";}
         static readonly Dictionary<string,string> words=new Dictionary<string,string>(StringComparer.Ordinal)
         {
+            {"自动识别", "Auto detect"},
+            {" · 目标数量：", " · Targets: "},
+            {"目标程序列表", "Target program list"},
+            {"添加目标程序", "Add target program"},
+            {"移除目标程序", "Remove target program"},
+            {"添加输入的程序", "Add typed program"},
+            {"目标程序列表无效。", "Invalid target program list."},
             {"已暂停", "Paused"},
             {"保护中", "Protected"},
             {"异常", "Error"},

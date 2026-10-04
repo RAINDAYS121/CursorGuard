@@ -37,21 +37,21 @@ namespace LoLMouseGuard
             });
             test("main_icon_layout_has_same_width_for_short_and_long_target_names",delegate {
                 int width=0;foreach(string target in new[] {"Paint.exe","League of Legends.exe",new string('A',110)+".exe"}) {
-                    View view=Previews.State("waiting");view.Settings.TargetExecutable=target;using(ControlPanel panel=new ControlPanel(new PreviewSession(view),true,false)) {if(width==0) width=panel.Width;Check(panel.Width==width && panel.PreviewProgramToolTip.Contains(target) && panel.PreviewProgramToolTip.Contains("点击选择程序") && !panel.IsHandleCreated);}
+                    View view=Previews.State("waiting");view.Settings.TargetExecutable=target;view.ActiveExecutable=target;using(ControlPanel panel=new ControlPanel(new PreviewSession(view),true,false)) {if(width==0) width=panel.Width;Check(panel.Width==width && panel.PreviewProgramToolTip.Contains(target) && panel.PreviewProgramToolTip.Contains("点击选择程序") && !panel.IsHandleCreated);}
                 }
             });
             test("main_icon_click_opens_selection_edit_path_without_native_input",delegate {
                 View view=Previews.State("paused");using(ControlPanel panel=new ControlPanel(new PreviewSession(view),true,false)) {panel.PreviewClickProgram();Check(view.Editing && panel.Height==402 && !panel.IsHandleCreated);panel.PreviewReturn();Check(panel.Height==44 && !panel.IsHandleCreated);}
             });
             test("program_icon_click_target_and_tooltip_at_125_150_200_dpi",delegate {
-                foreach(float scale in new[] {1.25f,1.5f,2f}) using(ControlPanel panel=new ControlPanel(new PreviewSession(Previews.State("waiting")),true,false)) using(Bitmap image=panel.RenderPreview(scale)) {Check(panel.ClientRectangle.Contains(panel.PreviewProgramClickBounds) && panel.PreviewProgramClickBounds.Width>=(int)(30*scale) && panel.PreviewProgramClickBounds.Height>=(int)(30*scale) && panel.PreviewProgramToolTip.Contains("League of Legends.exe") && !panel.IsHandleCreated);}
+                foreach(float scale in new[] {1.25f,1.5f,2f}) using(ControlPanel panel=new ControlPanel(new PreviewSession(Previews.State("protected")),true,false)) using(Bitmap image=panel.RenderPreview(scale)) {Check(panel.ClientRectangle.Contains(panel.PreviewProgramClickBounds) && panel.PreviewProgramClickBounds.Width>=(int)(30*scale) && panel.PreviewProgramClickBounds.Height>=(int)(30*scale) && panel.PreviewProgramToolTip.Contains("League of Legends.exe") && !panel.IsHandleCreated);}
             });
             test("real_own_executable_icon_resource_extracted_at_requested_dpi_without_launch",delegate {
                 string path=typeof(Program).Assembly.Location;NativeProgramIconSource source=new NativeProgramIconSource();foreach(int size in new[] {20,25,30,40}) using(Bitmap image=source.Extract(path,size)) Check(image!=null && image.Width==size && image.Height==size);
                 Check(source.Extract(Path.Combine(Path.GetDirectoryName(path),"missing-icon-target.exe"),20)==null);Check(source.Extract(@"\\unreadable-host\app.exe",20)==null);
             });
             test("target_refresh_drops_previous_icon_and_updates_long_name_tooltip",delegate {
-                View view=Previews.State("paused");view.Settings.TargetExecutable=Path.GetFileName(typeof(Program).Assembly.Location);using(ControlPanel panel=new ControlPanel(new PreviewSession(view),true,false)) {panel.PreviewUseIconFile(typeof(Program).Assembly.Location);Check(panel.PreviewHasProgramIcon);view.Settings.TargetExecutable=new string('A',110)+".exe";panel.PreviewRefresh();Check(!panel.PreviewHasProgramIcon && panel.PreviewProgramToolTip.Contains(view.Settings.TargetExecutable) && !panel.IsHandleCreated);}
+                View view=Previews.State("paused");view.Settings.TargetExecutable=Path.GetFileName(typeof(Program).Assembly.Location);view.ActiveExecutable=view.Settings.TargetExecutable;using(ControlPanel panel=new ControlPanel(new PreviewSession(view),true,false)) {panel.PreviewUseIconFile(typeof(Program).Assembly.Location);Check(panel.PreviewHasProgramIcon);view.Settings.TargetExecutable=new string('A',110)+".exe";view.ActiveExecutable=view.Settings.TargetExecutable;panel.PreviewRefresh();Check(!panel.PreviewHasProgramIcon && panel.PreviewProgramToolTip.Contains(view.Settings.TargetExecutable) && !panel.IsHandleCreated);}
             });
             test("waiting_program_text_applies_to_main_and_floating_status",delegate {
                 View view=Previews.State("waiting");view.Settings.TargetExecutable="Editor.exe";Check(StatusPresentation.Short(view)=="等待程序" && !StatusPresentation.Full(view).Contains("游戏"));

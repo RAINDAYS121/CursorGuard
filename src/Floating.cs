@@ -231,14 +231,14 @@ namespace LoLMouseGuard
         void RefreshProgramIcon()
         {
             if(preview || IsDisposed) return;
-            string executable=view.Settings.TargetExecutable;
+            string executable=StatusPresentation.FileName(view);
             int pixels=Math.Max(16,(int)Math.Round(20*ClientSize.Height/(double)FloatingGeometry.Height));
-            string key=view.Settings.TargetDisplay+"|"+executable+"|"+pixels;
+            string key=view.Settings.TargetDisplay+"|"+executable+"|"+view.ActivePid+"|"+pixels;
             if(key!=iconKey) {iconKey=key;iconGeneration++;iconRead=DateTime.MinValue;programIcons.Reset();SetProgramImage(null);}
             if(view.Settings.TargetDisplay=="name" || !IsHandleCreated || iconBusy || (DateTime.UtcNow-iconRead).TotalSeconds<5) return;
-            iconBusy=true;iconRead=DateTime.UtcNow;long generation=iconGeneration;
+            iconBusy=true;iconRead=DateTime.UtcNow;long generation=iconGeneration;uint pid=view.ActivePid;
             ThreadPool.QueueUserWorkItem(delegate {
-                Bitmap image=programIcons.Read(executable,pixels);
+                Bitmap image=programIcons.Read(executable,pixels,pid);
                 try {if(IsDisposed || !IsHandleCreated) {if(image!=null) image.Dispose();return;}
                     BeginInvoke((MethodInvoker)delegate {iconBusy=false;if(IsDisposed || generation!=iconGeneration) {if(image!=null) image.Dispose();return;}SetProgramImage(image);});
                 }catch(InvalidOperationException) {if(image!=null) image.Dispose();}

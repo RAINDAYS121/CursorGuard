@@ -25,7 +25,7 @@ From the project root:
 
 Build uses warning level 4 with warnings as errors. Verify launches hidden subprocesses only in `--self-test`, `--render-preview` and `--render-preview-en` modes. It does not create the guard worker, register real hotkeys, write a cursor constraint, show the app or send input. Output is `test-results.json`, `verification.json` and ignored `artifacts/validation-previews/`. Verification does not overwrite the committed illustrative previews.
 
-1.2.4 runs 150 checks, including 18 language tests and 16 settings/display regressions. They cover preference roundtrip, migration of absent/unknown language values, successful and failed saves, dropdown commitment, state/target preservation, English conflicts/errors, and both themes at 100%, 125%, 150% and 200%. Language test files are unique temporary fixtures inside the chosen test-output directory, removed on completion. They never read or write the user's effective preferences.
+1.3.0 runs 186 checks, with 36 new multiple-target cases, including 18 language tests and 16 settings/display regressions. They cover preference roundtrip, migration of absent/unknown language values, successful and failed saves, dropdown commitment, state/target preservation, English conflicts/errors, and both themes at 100%, 125%, 150% and 200%. Language test files are unique temporary fixtures inside the chosen test-output directory, removed on completion. They never read or write the user's effective preferences.
 
 验证仅使用模拟后端、隐藏托管控件、独立临时配置和离屏绘制。不会启动正常窗口、保护线程、真实快捷键或鼠标操作。当前用户的配置和运行目录保持不变。
 
@@ -39,11 +39,27 @@ Start-Process -FilePath $previewExe -ArgumentList ('--render-preview-en "'+$PWD+
 
 These modes use the same captions, layout and drawing code as the app, with explicitly simulated state/program data. Textbox and dropdown borders/text are representative offscreen drawings; Windows native popup borders can differ. No image editing, personal window-title enumeration or desktop capture is used. Installed Microsoft YaHei UI and Segoe UI have system-font fallbacks; no fonts are bundled.
 
+## Focused checks / 针对性检查
+
+After building, run the related mode in a hidden subprocess:
+
+```powershell
+$checksExe=Join-Path $PWD 'CursorGuard.exe'
+Start-Process -FilePath $checksExe -ArgumentList ('--test-targets "'+$PWD+'\targets-focused.json"') -WindowStyle Hidden -Wait
+Start-Process -FilePath $checksExe -ArgumentList ('--test-localization "'+$PWD+'\language-focused.json"') -WindowStyle Hidden -Wait
+```
+
+The target mode runs 36 target cases plus 30 existing settings/hotkey checks.
+The localization mode runs its 18 cases. Use focused checks while implementing
+the related feature, then full verification and an independent source-package
+rebuild when complete. Neither mode starts the normal app or writes real input.
+Keep focused reports outside package inputs.
+
 ## Packaging / 打包
 
-Packaging requires a passing report, the verified executable hash and version 1.2.4.0. It includes complete corresponding source, scripts, docs, original icon assets and bilingual previews in both ZIPs. The portable ZIP also includes the executable and sanitized test/verification reports. An explicit input allowlist excludes personal preferences, raw diagnostics, credentials, helpers and workspace history. Inputs cannot be reparse points or escape the project root. SHA256SUMS.txt accompanies the ZIPs. This script performs no upload or publication.
+Packaging requires a passing report, the verified executable hash and version 1.3.0.0. It includes complete corresponding source, scripts, docs, original icon assets and bilingual previews in both ZIPs. The portable ZIP also includes the executable and sanitized test/verification reports. An explicit input allowlist excludes personal preferences, raw diagnostics, credentials, helpers and workspace history. Inputs cannot be reparse points or escape the project root. SHA256SUMS.txt accompanies the ZIPs. This script performs no upload or publication.
 
-For an independent check, extract `release/CursorGuard-1.2.4-source.zip` into a new folder and run its `scripts/build.ps1` and `scripts/verify.ps1`. The ordinary GitHub workflow repeats this check with `contents: read`. Binary equality across different compiler/OS environments is not claimed.
+For an independent check, extract `release/CursorGuard-1.3.0-source.zip` into a new folder and run its `scripts/build.ps1` and `scripts/verify.ps1`. The ordinary GitHub workflow repeats this check with `contents: read`. Binary equality across different compiler/OS environments is not claimed.
 
 ## Optional native diagnostic / 可选原生检查
 
@@ -60,7 +76,7 @@ The dedicated release workflow accepts only main-branch pushes changing
 Preparation keeps `contents: read`, builds and tests, packages and independently
 rebuilds the corresponding source ZIP. Only the separate publish job has
 `contents: write`, using its temporary GITHUB_TOKEN without stored credentials.
-It publishes v1.2.4 for the exact run commit after verifying the three assets,
+It publishes v1.3.0 for the exact run commit after verifying the three assets,
 then downloads each public attachment and checks SHA-256. Mismatching existing
 tags/assets are refused, never replaced or deleted. Ordinary CI stays read-only.
 

@@ -23,7 +23,7 @@ namespace LoLMouseGuard
             {
                 Color foreground=dark?Color.FromArgb(237,237,237):Color.FromArgb(36,38,42);g.Clear(dark?Color.FromArgb(32,32,32):Color.FromArgb(241,242,244));
                 string palette=dark?"dark":"light",suffix=dark?"-dark":"";
-                Label(g,"CursorGuard 1.2.4 · "+(dark?"深色":"浅色")+"图标主界面预览",28,20,foreground,23);
+                Label(g,"CursorGuard 1.3.0 · "+(dark?"深色":"浅色")+"图标主界面预览",28,20,foreground,23);
                 Label(g,"独立构建 · "+testCount+" 项回归通过 · 当前运行的 1.2.1 保留",28,61,foreground);
                 Label(g,"原生客户区截图 + 运行时 alpha 曲面合成（窗口在屏幕外）",28,96,foreground);
                 for(int i=0;i<2;i++) {int x=i==0?28:520;g.FillRectangle(i==0?Brushes.Black:Brushes.White,x,126,450,78);Put(g,Path.Combine(native,"native-main-"+palette+"-dpi100.png"),x+18,143);}
@@ -44,7 +44,7 @@ namespace LoLMouseGuard
             using(Bitmap board=new Bitmap(1000,560)) using(Graphics g=Graphics.FromImage(board))
             {
                 Color foreground=Color.FromArgb(36,38,42);g.Clear(Color.FromArgb(239,239,241));
-                Label(g,"CursorGuard 1.2.4 · 悬浮条修复预览",28,20,foreground,23);Label(g,"原生客户区截图 + 运行时 alpha 曲面合成；未开启程序保护",28,65,foreground);
+                Label(g,"CursorGuard 1.3.0 · 悬浮条修复预览",28,20,foreground,23);Label(g,"原生客户区截图 + 运行时 alpha 曲面合成；未开启程序保护",28,65,foreground);
                 string[] palettes={"light","dark"};for(int i=0;i<2;i++) {int y=112+i*152;for(int j=0;j<2;j++) {int x=j==0?28:520;g.FillRectangle(j==0?Brushes.Black:Brushes.White,x,y,450,75);Put(g,Path.Combine(native,"native-floating-"+palettes[i]+"-dpi100.png"),x+18,y+22);}Put(g,Path.Combine(native,"native-floating-"+palettes[i]+"-dpi200.png"),28,y+86);}
                 Label(g,"短名 / 长名：按实际名称和状态测量宽度，长名称保留完整文件名提示",28,436,foreground);
                 string[] names={"short","league","long"};for(int i=0;i<3;i++) Put(g,Path.Combine(previews,"preview-floating-name-"+names[i]+".png"),28+i*315,475);

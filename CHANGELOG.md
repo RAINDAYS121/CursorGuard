@@ -1,5 +1,16 @@
 # Changelog
 
+## 1.3.0 — 2026-10-04
+
+- Add/remove multiple executable targets through the running-program/EXE picker or manual entry; deduplicate without case sensitivity.
+- Recognize only the eligible actual foreground instance. Executable/process/window/region changes release the previous constraint and require fresh stable bounds.
+- Migrate single-target settings to a version-2 list while preserving existing preferences; loads never rewrite files and explicit empty lists stay empty.
+- Main/floating bars use actual active filenames and PID-specific memory-only icons; idle state clears stale identity.
+- Retain settings enable intention, pause/emergency priority, language/theme/display modes and 200% host-size regressions.
+- 36 new target checks; focused validation precedes full verification and an independent source-ZIP rebuild. Live game, physical input and anti-cheat compatibility remain unverified.
+- 支持多个程序自动识别、添加移除与去重；只保护实际前台目标，切换后重新验证区域。旧单目标配置迁移为列表，保留其他设置及显式空列表。
+
+
 ## 1.2.4 — 2026-10-04
 
 - Preserve enable intention while editing settings; restore only after successful completion or cancellation. Explicit pause, emergency, quit and errors win.

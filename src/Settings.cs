@@ -30,23 +30,35 @@ namespace LoLMouseGuard
     }
     public sealed class Settings
     {
-        public int Version = 1;
+        public int Version = 2;
         public Shortcut Toggle = new Shortcut(3, 0x77);
         public Shortcut Emergency = new Shortcut(3, 0x78);
         public Shortcut Exit = new Shortcut(3, 0x79);
         public bool StartWithWindows;
-        public string TargetExecutable = "League of Legends.exe";
+        public List<string> TargetExecutables = new List<string> { "League of Legends.exe" };
+        // Legacy source compatibility only. Persistence uses the list exclusively.
+        [ScriptIgnore]
+        public string TargetExecutable
+        {
+            get { return TargetExecutables == null || TargetExecutables.Count == 0 ? "" : TargetExecutables[0]; }
+            set { TargetExecutables = new List<string> { value }; }
+        }
+        public bool Matches(string executable)
+        { return TargetPrograms.Contains(TargetExecutables, executable); }
+        public void SetTargets(IEnumerable<string> names)
+        { TargetExecutables = TargetPrograms.Normalize(names); }
         public string TargetDisplay = "icon";
         public static Settings Defaults() { return new Settings(); }
-        public Settings Copy() { return new Settings { Version = Version, Toggle = Toggle.Copy(), Emergency = Emergency.Copy(), Exit = Exit.Copy(), StartWithWindows = StartWithWindows, TargetExecutable = TargetExecutable, TargetDisplay = TargetDisplay }; }
+        public Settings Copy() { return new Settings { Version = Version, Toggle = Toggle == null ? null : Toggle.Copy(), Emergency = Emergency == null ? null : Emergency.Copy(), Exit = Exit == null ? null : Exit.Copy(), StartWithWindows = StartWithWindows, TargetExecutables = TargetExecutables == null ? null : new List<string>(TargetExecutables), TargetDisplay = TargetDisplay }; }
         [ScriptIgnore]
         public Shortcut[] Keys { get { return new[] { Toggle, Emergency, Exit }; } }
         public string Validate()
         {
-            if (Version != 1) return "不支持的配置版本。";
+            if (Version != 2) return "不支持的配置版本。";
             if(TargetDisplay!="icon" && TargetDisplay!="name") return "目标程序显示方式无效。";
-            if (String.IsNullOrWhiteSpace(TargetExecutable) || TargetExecutable.Length > 128 || !TargetExecutable.EndsWith(".exe", StringComparison.OrdinalIgnoreCase) || TargetExecutable != TargetExecutable.Trim() || TargetExecutable.IndexOfAny(Path.GetInvalidFileNameChars()) >= 0 || TargetExecutable.IndexOfAny(new[] {'/','\\','\r','\n','\0'}) >= 0)
-                return "目标程序请填写完整可执行文件名，例如 League of Legends.exe；不要填写路径或通配符。";
+            if (TargetExecutables == null) return "目标程序列表无效。";
+            foreach (string executable in TargetExecutables)
+                if (!TargetPrograms.ValidName(executable)) return TargetPrograms.InvalidNameMessage;
             HashSet<string> combinations = new HashSet<string>();
             foreach (Shortcut key in Keys)
             {
@@ -102,7 +114,25 @@ namespace LoLMouseGuard
                 var fields = serializer.Deserialize<Dictionary<string, object>>(data);
                 if (fields == null || !fields.ContainsKey("Toggle") || !fields.ContainsKey("Emergency") || !fields.ContainsKey("Exit") || !fields.ContainsKey("StartWithWindows")) throw new FormatException();
                 Settings result = serializer.Deserialize<Settings>(data);
-                if (result == null || result.Validate() != null) throw new FormatException();
+                if (result == null || (result.Version != 1 && result.Version != 2)) throw new FormatException();
+                if (fields.ContainsKey("TargetExecutables"))
+                {
+                    System.Collections.IEnumerable raw = fields["TargetExecutables"] as System.Collections.IEnumerable;
+                    if (raw == null || raw is string) throw new FormatException();
+                    List<string> names = new List<string>();
+                    foreach (object entry in raw) { if (!(entry is string)) throw new FormatException(); names.Add((string)entry); }
+                    result.SetTargets(names);
+                }
+                else
+                {
+                    // Never rewrite the original file during migration or fallback.
+                    if (result.Version != 1 && fields.ContainsKey("Version")) throw new FormatException();
+                    object legacy;
+                    if (fields.TryGetValue("TargetExecutable", out legacy))
+                    { if (!(legacy is string)) throw new FormatException(); result.TargetExecutable = (string)legacy; }
+                }
+                result.Version = 2;
+                if (result.Validate() != null) throw new FormatException();
                 return result;
             }
             catch (Exception)
@@ -113,6 +143,7 @@ namespace LoLMouseGuard
         }
         public void Save(Settings settings)
         {
+            settings = settings.Copy(); settings.SetTargets(settings.TargetExecutables);
             string problem = settings.Validate(); if (problem != null) throw new FormatException(problem);
             string directory = Path.GetDirectoryName(path); Directory.CreateDirectory(directory);
             string temporary = Path.Combine(directory, "settings-" + Guid.NewGuid().ToString("N") + ".tmp");
@@ -169,6 +200,7 @@ namespace LoLMouseGuard
         public void BeginEdit() { if (active != null) active.Dispose(); Ready = false; }
         public bool Save(Settings candidate, out string message)
         {
+            candidate = candidate.Copy(); candidate.SetTargets(candidate.TargetExecutables);
             string problem = candidate.Validate();
             if (problem != null) { message = problem; return false; }
             HotkeySet next = new HotkeySet(backend, candidate.Keys);
@@ -203,4 +235,3 @@ namespace LoLMouseGuard
         public void Dispose() { if (active != null) active.Dispose(); Ready = false; }
     }
 }
-

@@ -63,11 +63,11 @@ namespace LoLMouseGuard
                     bool captured;using(Bitmap native=Capture(panel,panel.Height/2f-.5f,out captured)) native.Save(Path.Combine(directory,"native-main-"+suffix+".png"),ImageFormat.Png);
                     if(captured) capturedCount++;
                     records.Add(new {kind="main",theme=dark?"dark":"light",scale=scale,owner=Metadata(panel.Handle),alpha_frame=Metadata(panel.PreviewFrameHandle),updates=panel.PreviewFrameUpdates,native_client_printed=captured,outside_desktop=!desktop.IntersectsWith(panel.Bounds)});
-                    string resourceFile=typeof(Program).Assembly.Location;synthetic.Settings.TargetExecutable=Path.GetFileName(resourceFile);panel.PreviewRefresh();panel.PreviewUseIconFile(resourceFile);Application.DoEvents();
+                    string resourceFile=typeof(Program).Assembly.Location;synthetic.Settings.TargetExecutable=Path.GetFileName(resourceFile);synthetic.ActiveExecutable=synthetic.Settings.TargetExecutable;panel.PreviewRefresh();panel.PreviewUseIconFile(resourceFile);Application.DoEvents();
                     using(Bitmap native=Capture(panel,panel.Height/2f-.5f,out captured)) native.Save(Path.Combine(directory,"native-main-fileicon-"+suffix+".png"),ImageFormat.Png);
                     valid &= captured && panel.PreviewHasProgramIcon && panel.PreviewProgramToolTip.Contains(Path.GetFileName(resourceFile));
                     records.Add(new {kind="main_resource_icon",theme=dark?"dark":"light",scale=scale,icon_loaded=panel.PreviewHasProgramIcon,native_client_printed=captured,outside_desktop=!desktop.IntersectsWith(panel.Bounds),source="read-only own executable resources; no program launch"});
-                    synthetic.Settings.TargetExecutable="League of Legends.exe";panel.PreviewRefresh();
+                    synthetic.Settings.TargetExecutable="League of Legends.exe";synthetic.ActiveExecutable=synthetic.Settings.TargetExecutable;panel.PreviewRefresh();
                     Rectangle main=panel.Bounds;bool lifecycle=FrameMatches(panel,panel.PreviewFrameHandle);
                     panel.PreviewHide();Application.DoEvents();lifecycle &= !panel.Visible && !IsWindowVisible(panel.PreviewFrameHandle);
                     panel.Show();Application.DoEvents();lifecycle &= FrameMatches(panel,panel.PreviewFrameHandle);

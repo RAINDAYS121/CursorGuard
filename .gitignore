@@ -3,6 +3,8 @@
 *.pdb
 *.zip
 test-results.json
+targets-focused.json
+language-focused.json
 verification.json
 SHA256SUMS.txt
 release/

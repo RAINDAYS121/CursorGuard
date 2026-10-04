@@ -2,18 +2,18 @@
 
 [English](README.en.md) · [详细说明](docs/README.zh-CN.md)
 
-Windows 10/11 鼠标限制工具：在指定游戏或应用处于前台时，将鼠标限制在窗口内，帮助避免双屏使用时误移到副屏。
+Windows 10/11 鼠标限制工具：自动识别目标列表中当前在前台的游戏或应用，将鼠标限制在窗口内，帮助避免双屏使用时误移到副屏。
 
 ![深色主界面](previews/zh-CN/preview-paused-dark.png)
 ![设置界面](previews/zh-CN/preview-settings.png)
 
 ## 下载与快速开始
 
-[下载 v1.2.4 程序包](https://github.com/RAINDAYS121/CursorGuard/releases/download/v1.2.4/CursorGuard-1.2.4.zip) · [全部版本、源码与校验文件](https://github.com/RAINDAYS121/CursorGuard/releases)
+[下载 v1.3.0 程序包](https://github.com/RAINDAYS121/CursorGuard/releases/download/v1.3.0/CursorGuard-1.3.0.zip) · [全部版本、源码与校验文件](https://github.com/RAINDAYS121/CursorGuard/releases)
 
 1. 完整解压程序包，运行 `CursorGuard.exe`。无需安装或管理员权限，启动时默认暂停。
-2. 打开“设置”，选择目标程序，点击“完成”保存。默认目标为英雄联盟。
-3. 打开启用开关，或按 `Ctrl + Alt + F8`；切回目标程序，并将鼠标移入窗口。
+2. 打开“设置”，点目标列表旁的“+”添加程序，选中列表项后点“−”移除；点击“完成”保存。默认包含英雄联盟。
+3. 打开启用开关，或按 `Ctrl + Alt + F8`；切回任一已添加的程序，并将鼠标移入窗口。
 4. 确认状态显示“保护中”。切出目标程序或暂停时会释放鼠标。
 
 | 默认快捷键 | 操作 |
@@ -24,8 +24,8 @@ Windows 10/11 鼠标限制工具：在指定游戏或应用处于前台时，将
 
 ## 主要功能
 
-- 选择游戏或应用作为目标，副屏可保持正常显示。
-- 显示实际保护状态；可选悬浮条，支持程序图标或名称显示。
+- 添加多个游戏或应用，自动识别当前前台目标；副屏可保持正常显示。
+- 显示实际保护状态和当前识别程序；可选悬浮条，支持程序图标或名称显示。
 - 支持中文 / English、浅色 / 深色外观、自定义快捷键和可选开机自启。
 - 编辑设置时释放鼠标，完成或返回后恢复原来的启用意图。
 

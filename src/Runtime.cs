@@ -2,6 +2,7 @@
 // Copyright (c) 2026 RAINDAYS121.
 using System;
 using System.Collections.Concurrent;
+using System.Collections.Generic;
 using System.Diagnostics;
 using System.IO;
 using System.Threading;
@@ -14,6 +15,8 @@ namespace LoLMouseGuard
     {
         public bool Enabled, CanEnable, Stopped, Editing;
         public string Status, Detail, Game, Range, Notice;
+        public string ActiveExecutable = "";
+        public uint ActivePid;
         public Settings Settings = Settings.Defaults();
     }
     public interface IUiSession : IDisposable { View ReadView(); void Send(Command command); void SaveSettings(Settings settings); }
@@ -44,22 +47,24 @@ namespace LoLMouseGuard
         {
             string game = core.Enabled ? "未识别到前台目标" : "暂停检测";
             string range = core.Enabled ? "等待有效程序区域" : "尚未开始保护";
-            if (core.Enabled && scene != null && String.Equals(scene.Executable, settings.Current.TargetExecutable, StringComparison.OrdinalIgnoreCase))
+            if (core.Enabled && scene != null && settings.Current.Matches(scene.Executable))
             {
                 game = scene.Executable + "  ·  PID " + scene.Pid;
                 Box target;
                 if (scene.TryTarget(out target)) range = target.Width + " × " + target.Height + " px   ·   " + target;
             }
             string detail = (core.Detail ?? "").Replace("Ctrl+Alt+F9", settings.Current.Emergency.Display());
-            lock (viewLock) view = new View { Enabled = !stopped && edit.EnabledIntent, CanEnable = core.CanEnable && !edit.Editing, Status = core.Status, Detail = detail,
+            View published = new View { Enabled = !stopped && edit.EnabledIntent, CanEnable = core.CanEnable && !edit.Editing, Status = core.Status, Detail = detail,
                 Stopped = stopped, Editing = !stopped && edit.Editing, Settings = settings.Current.Copy(), Notice = notice, Game = game, Range = range };
+            ViewTarget.Update(published,scene,core.Enabled && !edit.Editing && !stopped);
+            lock (viewLock) view = published;
         }
         void Run()
         {
             WindowsBackend backend = new WindowsBackend(); GuardCore core = new GuardCore(backend, dpiReady);
             FileSettingsStore store = new FileSettingsStore(Path.Combine(Environment.GetFolderPath(Environment.SpecialFolder.ApplicationData), "LoLMouseGuard", "settings.json"));
             string notice; Settings initial = store.Load(out notice);
-            backend.TargetExecutable = initial.TargetExecutable;
+            backend.TargetExecutables = new List<string>(initial.TargetExecutables);
             SettingsService settings = new SettingsService(backend, store, new UserStartupStore(), Application.ExecutablePath, initial);
             bool quit = false;SettingsSession edit=new SettingsSession(core,settings);
             try
@@ -86,7 +91,7 @@ namespace LoLMouseGuard
                     {
                         if (request.Settings != null)
                         {
-                            edit.Save(request.Settings,out notice);backend.TargetExecutable=settings.Current.TargetExecutable;
+                            edit.Save(request.Settings,out notice);backend.TargetExecutables=new List<string>(settings.Current.TargetExecutables);
                         }
                         else if (request.Command == Command.Quit) {edit.Abort();quit=true;break;}
                         else if (request.Command == Command.Emergency) edit.Pause(true);

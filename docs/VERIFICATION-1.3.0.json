@@ -1,0 +1,18 @@
+{
+  "version": "1.3.0",
+  "simulation_passed": 186,
+  "simulation_failed": 0,
+  "exe_sha256": "EA314425E465B086948654C3628630544AD50EBCA19F16098236DB9FFF386707",
+  "mode": "simulation_and_offscreen_only",
+  "native_window_handle_created_in_tests": false,
+  "real_game_tested": false,
+  "real_drag_focus_tested": false,
+  "real_monitor_dpi_tested": false,
+  "anticheat_compatibility_confirmed": false,
+  "target_regressions": 36,
+  "focused_target_and_settings_passed": 66,
+  "focused_localization_passed": 18,
+  "settings_schema_version": 2,
+  "single_target_migration": "read-only until explicit save",
+  "effective_user_settings_modified": false
+}

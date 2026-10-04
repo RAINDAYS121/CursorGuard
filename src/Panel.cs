@@ -74,10 +74,10 @@ namespace LoLMouseGuard
     }
     public static class StatusPresentation
     {
-        public static string FileName(View v) {return Path.GetFileName(v.Settings.TargetExecutable??"");}
+        public static string FileName(View v) {return Path.GetFileName(v.ActiveExecutable??"");}
         public static string Name(View v)
-        {string file=FileName(v);return file.EndsWith(".exe",StringComparison.OrdinalIgnoreCase)?file.Substring(0,file.Length-4):file;}
-        public static string Full(View v) {return FileName(v)+" · "+Heading(v);}
+        {string file=FileName(v);if(file.Length==0) return UiText.T("自动识别");return file.EndsWith(".exe",StringComparison.OrdinalIgnoreCase)?file.Substring(0,file.Length-4):file;}
+        public static string Full(View v) {string file=FileName(v);return (file.Length==0?UiText.T("自动识别")+UiText.T(" · 目标数量：")+v.Settings.TargetExecutables.Count:file)+" · "+Heading(v);}
         public static string Kind(View v)
         {
             if (v.Editing) return "paused";
@@ -200,16 +200,18 @@ namespace LoLMouseGuard
         readonly bool preview;
         readonly bool nativePreview;
         readonly SwitchControl toggle,startup,floatingToggle;
-        readonly PlainButton settingsButton,back,done,more,chooseProgram;
+        readonly PlainButton settingsButton,back,done,more,chooseProgram,removeProgram;
         readonly ProgramIconButton programIcon;
         readonly ProgramIconCache programIcons;
         bool iconBusy,pendingProgramChoice;
         long iconGeneration;
         string iconTarget;
         int iconPixels;
+        uint iconPid;
         DateTime iconRead=DateTime.MinValue;
         readonly ShortcutButton[] shortcuts=new ShortcutButton[3];
-        readonly TextBox target;
+        readonly ComboBox target;
+        readonly List<string> draftTargets=new List<string>();
         readonly ComboBox appearance,language,targetDisplay;
         string languageSignature;
         readonly SettingsBody settingsBody;
@@ -258,14 +260,15 @@ namespace LoLMouseGuard
             for(int i=0;i<3;i++) { shortcuts[i]=new ShortcutButton { Location=new Point(166,42+i*37),Size=new Size(194,30),AccessibleName=labels[i] }; Controls.Add(shortcuts[i]); }
             startup=new SwitchControl { Location=new Point(318,159),Size=new Size(42,24),AutoCheck=true,AccessibleName=UiText.T("登录 Windows 时启动") }; Controls.Add(startup);
             floatingToggle=new SwitchControl { Location=new Point(318,201),Size=new Size(42,24),AutoCheck=true,AccessibleName=UiText.T("显示实时状态悬浮条") }; Controls.Add(floatingToggle);
-            target=new TextBox { Location=new Point(134,242),Size=new Size(166,25),BorderStyle=BorderStyle.FixedSingle,BackColor=Theme.Background,ForeColor=Theme.Text,Font=UiTypography.ControlFont(true),AccessibleName=UiText.T("目标程序可执行文件名") }; Controls.Add(target);
-            chooseProgram=ButtonAt(UiText.T("选择"),304,240,56,30,delegate {ChooseProgram();});
+            target=new ComboBox { Location=new Point(134,242),Size=new Size(166,25),DropDownStyle=ComboBoxStyle.DropDown,BackColor=Theme.Background,ForeColor=Theme.Text,Font=UiTypography.ControlFont(true),AccessibleName=UiText.T("目标程序列表") }; Controls.Add(target);
+            chooseProgram=ButtonAt("+",304,240,26,30,delegate {ChooseProgram();});chooseProgram.AccessibleName=UiText.T("添加目标程序");
+            removeProgram=ButtonAt("−",334,240,26,30,delegate {RemoveDraftTarget();});removeProgram.AccessibleName=UiText.T("移除目标程序");
             appearance=new ComboBox {Location=new Point(134,280),Size=new Size(226,25),DropDownStyle=ComboBoxStyle.DropDownList,Font=UiText.ControlFont,AccessibleName=UiText.T("外观：跟随系统、浅色、深色")};appearance.Items.AddRange(new object[] {UiText.T("跟随系统"),UiText.T("浅色"),UiText.T("深色")});appearance.SelectedIndex=0;Controls.Add(appearance);
             language=new ComboBox {Location=new Point(134,318),Size=new Size(226,25),DropDownStyle=ComboBoxStyle.DropDownList,Font=UiText.ControlFont,AccessibleName=UiText.T("界面语言")};Controls.Add(language);
             targetDisplay=new ComboBox {Location=new Point(134,356),Size=new Size(226,25),DropDownStyle=ComboBoxStyle.DropDownList,Font=UiText.ControlFont,AccessibleName=UiText.T("目标程序显示方式")};targetDisplay.Items.AddRange(new object[] {UiText.T("程序图标"),UiText.T("程序名称")});Controls.Add(targetDisplay);
             settingsBody=new SettingsBody {Location=new Point(0,40),Size=new Size(380,362),AutoScrollMinSize=new Size(360,362)};
             settingsBody.PaintContent=PaintSettingsContent;Controls.Add(settingsBody);
-            foreach(Control child in new Control[] {shortcuts[0],shortcuts[1],shortcuts[2],startup,floatingToggle,target,chooseProgram,appearance,language,targetDisplay})
+            foreach(Control child in new Control[] {shortcuts[0],shortcuts[1],shortcuts[2],startup,floatingToggle,target,chooseProgram,removeProgram,appearance,language,targetDisplay})
             {Point location=child.Location;settingsBody.Controls.Add(child);child.Location=new Point(location.X,location.Y-40);}
             SetDraft(view.Settings);
             panelMenu=new ContextMenuStrip();panelMenu.Items.Add(UiText.T("设置"),null,delegate {OpenSettings();});
@@ -343,7 +346,7 @@ namespace LoLMouseGuard
         protected override void OnActivated(EventArgs e) {base.OnActivated(e);SyncFrame();}
         void ShowDetails()
         {
-            UiDialogs.Show(this,"CursorGuard 1.2.4\n\n"+UiText.Display(view.Status)+"\n"+UiText.Display(view.Detail)+"\n"+UiText.Display(view.Notice)+"\n"+UiText.Display(floating.Warning)+"\n"+UiText.Display(frameWarning)+UiText.T("\n\n目标程序：")+view.Settings.TargetExecutable+UiText.T("\n紧急释放：")+view.Settings.Emergency.Display()+UiText.T("\n退出：")+view.Settings.Exit.Display()+UiText.T("\n\n悬浮条可拖动；从托盘显示、隐藏或重置。独占全屏下可能不可见。"),UiText.T("详情与帮助"),MessageBoxButtons.OK,MessageBoxIcon.Information);
+            UiDialogs.Show(this,"CursorGuard 1.3.0\n\n"+UiText.Display(view.Status)+"\n"+UiText.Display(view.Detail)+"\n"+UiText.Display(view.Notice)+"\n"+UiText.Display(floating.Warning)+"\n"+UiText.Display(frameWarning)+UiText.T("\n\n目标程序：")+String.Join(", ",view.Settings.TargetExecutables.ToArray())+UiText.T("\n紧急释放：")+view.Settings.Emergency.Display()+UiText.T("\n退出：")+view.Settings.Exit.Display()+UiText.T("\n\n悬浮条可拖动；从托盘显示、隐藏或重置。独占全屏下可能不可见。"),UiText.T("详情与帮助"),MessageBoxButtons.OK,MessageBoxIcon.Information);
         }
         void OpenSettings()
         {
@@ -363,15 +366,34 @@ namespace LoLMouseGuard
             if(preview || !view.Editing) return;
             if(programMenu!=null) programMenu.Dispose();
             programMenu=new ContextMenuStrip {BackColor=Theme.Background,ForeColor=Theme.Text};ContextMenuStrip choices=programMenu;
-                choices.Items.Add(UiText.T("运行中的程序…"),null,delegate {using(ProgramPicker picker=new ProgramPicker(false,ProgramDiscovery.Read())) if(picker.ShowDialog(this)==DialogResult.OK) target.Text=picker.SelectedExecutable;});
-                choices.Items.Add(UiText.T("选择 .exe 文件…"),null,delegate {using(OpenFileDialog files=new OpenFileDialog {Filter=UiText.T("程序 (*.exe)|*.exe"),CheckFileExists=true,Multiselect=false,Title=UiText.T("选择目标程序（不会运行）")}) if(files.ShowDialog(this)==DialogResult.OK) {try {target.Text=ProgramSelection.FromFile(files.FileName);}catch(ArgumentException error) {UiDialogs.Show(this,UiText.ExceptionMessage(error),UiText.T("请选择程序"),MessageBoxButtons.OK,MessageBoxIcon.Information);}}});
+                choices.Items.Add(UiText.T("运行中的程序…"),null,delegate {using(ProgramPicker picker=new ProgramPicker(false,ProgramDiscovery.Read())) if(picker.ShowDialog(this)==DialogResult.OK) AddDraftTarget(picker.SelectedExecutable);});
+                choices.Items.Add(UiText.T("选择 .exe 文件…"),null,delegate {using(OpenFileDialog files=new OpenFileDialog {Filter=UiText.T("程序 (*.exe)|*.exe"),CheckFileExists=true,Multiselect=false,Title=UiText.T("选择目标程序（不会运行）")}) if(files.ShowDialog(this)==DialogResult.OK) {try {AddDraftTarget(ProgramSelection.FromFile(files.FileName));}catch(ArgumentException error) {UiDialogs.Show(this,UiText.ExceptionMessage(error),UiText.T("请选择程序"),MessageBoxButtons.OK,MessageBoxIcon.Information);}}});
+                choices.Items.Add(UiText.T("添加输入的程序"),null,delegate {AddDraftTarget(target.Text.Trim());});
                 choices.Items.Add(UiText.T("手动输入"),null,delegate {target.Focus();target.SelectAll();});choices.Show(chooseProgram,new Point(0,chooseProgram.Height));
         }
-        void SetDraft(Settings settings) { for(int i=0;i<3;i++) shortcuts[i].SetValue(settings.Keys[i]); startup.Checked=settings.StartWithWindows; target.Text=settings.TargetExecutable;targetDisplay.SelectedIndex=settings.TargetDisplay=="name"?1:0; }
+        void RefreshDraftTargets(string selected)
+        {
+            target.Items.Clear();foreach(string executable in draftTargets) target.Items.Add(executable);
+            target.SelectedIndex=selected==null?-1:target.FindStringExact(selected);
+            if(target.SelectedIndex<0 && target.Items.Count>0) target.SelectedIndex=0;
+            if(target.Items.Count==0) target.Text="";
+        }
+        bool AddDraftTarget(string executable)
+        {
+            if(!view.Editing) return false;
+            if(!TargetPrograms.ValidName(executable)) {if(!preview) UiDialogs.Show(this,UiText.T(TargetPrograms.InvalidNameMessage),UiText.T("请选择程序"),MessageBoxButtons.OK,MessageBoxIcon.Information);return false;}
+            bool added=!TargetPrograms.Contains(draftTargets,executable);if(added) draftTargets.Add(executable);
+            RefreshDraftTargets(executable);return added;
+        }
+        void RemoveDraftTarget()
+        {if(!view.Editing || target.SelectedIndex<0) return;draftTargets.RemoveAt(target.SelectedIndex);RefreshDraftTargets(null);}
+        void SetDraft(Settings settings) { for(int i=0;i<3;i++) shortcuts[i].SetValue(settings.Keys[i]); startup.Checked=settings.StartWithWindows; draftTargets.Clear();draftTargets.AddRange(settings.TargetExecutables);RefreshDraftTargets(null);targetDisplay.SelectedIndex=settings.TargetDisplay=="name"?1:0; }
         void SaveSettings()
         {
             foreach(ShortcutButton key in shortcuts) if(key.Problem!=null) { UiDialogs.Show(this,UiText.Display(key.Problem),UiText.T("快捷键未保存"),MessageBoxButtons.OK,MessageBoxIcon.Information); return; }
-            Settings candidate=new Settings { Toggle=shortcuts[0].Value.Copy(),Emergency=shortcuts[1].Value.Copy(),Exit=shortcuts[2].Value.Copy(),StartWithWindows=startup.Checked,TargetExecutable=target.Text.Trim(),TargetDisplay=targetDisplay.SelectedIndex==1?"name":"icon" };
+            Settings candidate=new Settings { Toggle=shortcuts[0].Value.Copy(),Emergency=shortcuts[1].Value.Copy(),Exit=shortcuts[2].Value.Copy(),StartWithWindows=startup.Checked,TargetExecutables=new List<string>(draftTargets),TargetDisplay=targetDisplay.SelectedIndex==1?"name":"icon" };
+            if(!String.IsNullOrWhiteSpace(target.Text)) candidate.TargetExecutables.Add(target.Text.Trim());
+            candidate.SetTargets(candidate.TargetExecutables);
             string problem=candidate.Validate(); if(problem!=null) { UiDialogs.Show(this,UiText.Display(problem),UiText.T("快捷键未保存"),MessageBoxButtons.OK,MessageBoxIcon.Information); return; }
             pendingSave=true; session.SaveSettings(candidate);
         }
@@ -400,16 +422,16 @@ namespace LoLMouseGuard
         void RefreshProgramIcon()
         {
             string targetName=StatusPresentation.FileName(view),description=StatusPresentation.Full(view)+UiText.T("\n点击选择程序");
-            programIcon.AccessibleName=targetName+UiText.T("，选择程序");programIcon.AccessibleDescription=description;
+            programIcon.AccessibleName=StatusPresentation.Name(view)+UiText.T("，选择程序");programIcon.AccessibleDescription=description;
             programIcon.NameOnly=view.Settings.TargetDisplay=="name";programIcon.Text=programIcon.NameOnly?StatusPresentation.Name(view):"";
             if(tips!=null && tips.GetToolTip(programIcon)!=description) tips.SetToolTip(programIcon,description);
             int pixels=Math.Max(16,(int)Math.Round(20*programIcon.Height/30.0));
-            if(iconTarget!=targetName || iconPixels!=pixels) {iconTarget=targetName;iconPixels=pixels;iconGeneration++;iconRead=DateTime.MinValue;programIcon.SetImage(null);if(programIcons!=null) programIcons.Reset();}
+            if(iconTarget!=targetName || iconPid!=view.ActivePid || iconPixels!=pixels) {iconTarget=targetName;iconPid=view.ActivePid;iconPixels=pixels;iconGeneration++;iconRead=DateTime.MinValue;programIcon.SetImage(null);if(programIcons!=null) programIcons.Reset();}
             if(programIcon.NameOnly || settingsPage || preview || !IsHandleCreated || !Visible || iconBusy || DateTime.UtcNow<iconRead) return;
-            iconBusy=true;long generation=iconGeneration;
+            iconBusy=true;long generation=iconGeneration;uint pid=view.ActivePid;
             System.Threading.ThreadPool.QueueUserWorkItem(delegate
             {
-                Bitmap image=programIcons.Read(targetName,pixels);
+                Bitmap image=programIcons.Read(targetName,pixels,pid);
                 try
                 {
                     if(IsDisposed || Disposing || !IsHandleCreated) {if(image!=null) image.Dispose();return;}
@@ -425,7 +447,7 @@ namespace LoLMouseGuard
         }
         void RefreshLanguage()
         {
-            if(appearance.DroppedDown || language.DroppedDown || targetDisplay.DroppedDown) return;
+            if(target.DroppedDown || appearance.DroppedDown || language.DroppedDown || targetDisplay.DroppedDown) return;
             string choice=floating==null?UiText.Language:floating.Preferences.Language;UiText.SetLanguage(choice);
             int saved=LanguageSelection.Index(choice);
             if(language.SelectedIndex!=saved) language.SelectedIndex=language.Items.Count>saved?saved:-1;
@@ -442,7 +464,7 @@ namespace LoLMouseGuard
             if(systemTheme==null || DateTime.UtcNow-themeRead>TimeSpan.FromSeconds(1)) {systemTheme=SystemThemeReader.Read();themeRead=DateTime.UtcNow;}
             string choice=floating.Preferences.Appearance;bool dark=ThemeChoice.IsDark(choice,systemTheme.AppsLight);string signature=choice+dark+systemTheme.TaskbarLight+systemTheme.HighContrast;
             updatingAppearance=true;AppearanceSelection.Reconcile(appearance,choice);updatingAppearance=false;
-            if(appearance.DroppedDown || language.DroppedDown || targetDisplay.DroppedDown) return; // Do not restyle/recreate a native popup while it tracks the mouse.
+            if(target.DroppedDown || appearance.DroppedDown || language.DroppedDown || targetDisplay.DroppedDown) return; // Do not restyle/recreate a native popup while it tracks the mouse.
             if(signature==themeSignature) return;themeSignature=signature;Theme.Apply(dark,systemTheme.HighContrast);BackColor=Theme.Background;ForeColor=Theme.Text;
             ApplyControlTheme(this);
             if(trayMenu!=null) {foreach(ContextMenuStrip menu in new[] {trayMenu,moreMenu,panelMenu}) {menu.BackColor=Theme.Background;menu.ForeColor=Theme.Text;}}
@@ -497,9 +519,9 @@ namespace LoLMouseGuard
             toggle.Visible=settingsButton.Visible=programIcon.Visible=!settingsPage;
             programIcon.Enabled=!view.Stopped && !pendingSave;
             settingsBody.Visible=settingsPage;
-            back.Visible=done.Visible=more.Visible=startup.Visible=floatingToggle.Visible=target.Visible=chooseProgram.Visible=appearance.Visible=language.Visible=targetDisplay.Visible=settingsPage;
+            back.Visible=done.Visible=more.Visible=startup.Visible=floatingToggle.Visible=target.Visible=chooseProgram.Visible=removeProgram.Visible=appearance.Visible=language.Visible=targetDisplay.Visible=settingsPage;
             foreach(ShortcutButton key in shortcuts) { key.Visible=settingsPage; key.Enabled=view.Editing && !pendingSave; }
-            startup.Enabled=target.Enabled=chooseProgram.Enabled=targetDisplay.Enabled=view.Editing && !pendingSave; done.Text=view.Editing?UiText.T("完成"):UiText.T("编辑"); done.Enabled=!view.Stopped && !pendingSave;
+            startup.Enabled=target.Enabled=chooseProgram.Enabled=removeProgram.Enabled=targetDisplay.Enabled=view.Editing && !pendingSave; done.Text=view.Editing?UiText.T("完成"):UiText.T("编辑"); done.Enabled=!view.Stopped && !pendingSave;
             back.Enabled=!pendingSave;
             // Editing deliberately suspends global shortcuts. Keep the direct
             // hide action available after return/save, when emergency is restored.
@@ -572,6 +594,10 @@ namespace LoLMouseGuard
         public void PreviewScrollToAppearance() {if(!preview) throw new InvalidOperationException();settingsBody.ScrollControlIntoView(appearance);}
         public void PreviewScrollToLanguage() {if(!preview) throw new InvalidOperationException();settingsBody.ScrollControlIntoView(language);}
         public void PreviewScrollToTargetDisplay() {if(!preview) throw new InvalidOperationException();settingsBody.ScrollControlIntoView(targetDisplay);}
+        public ComboBox PreviewTargetList {get{return target;}}
+        public bool PreviewAddTarget(string executable) {if(!preview) throw new InvalidOperationException();return AddDraftTarget(executable);}
+        public void PreviewRemoveTarget(int index) {if(!preview) throw new InvalidOperationException();target.SelectedIndex=index;RemoveDraftTarget();}
+        public Rectangle PreviewRemoveTargetBounds {get{return removeProgram.Bounds;}}
         public ComboBox PreviewLanguageChoice {get{return language;}}
         public ComboBox PreviewTargetDisplayChoice {get{return targetDisplay;}}
         public string PreviewTargetCaption {get{return programIcon.Text;}}
@@ -603,10 +629,10 @@ namespace LoLMouseGuard
                 float scale=ClientSize.Width/(float)pageWidth;
                 using(GraphicsPath clip=Theme.Rounded(new RectangleF(0,0,b.Width,b.Height),settingsPage?18*scale:b.Height/2f)) g.SetClip(clip);
                 if(settingsPage) {GraphicsState state=g.Save();g.SetClip(settingsBody.Bounds,CombineMode.Intersect);g.TranslateTransform(settingsBody.Left,settingsBody.Top);settingsBody.PaintPreview(g);g.Restore(state);}
-                Control[] children=settingsPage ? new Control[] {back,more,done,shortcuts[0],shortcuts[1],shortcuts[2],startup,floatingToggle,target,chooseProgram,appearance,language,targetDisplay} : new Control[] {programIcon,toggle,settingsButton};
+                Control[] children=settingsPage ? new Control[] {back,more,done,shortcuts[0],shortcuts[1],shortcuts[2],startup,floatingToggle,target,chooseProgram,removeProgram,appearance,language,targetDisplay} : new Control[] {programIcon,toggle,settingsButton};
                 foreach(Control child in children)
                 {
-                    using(Bitmap c=new Bitmap(child.Width,child.Height)) { using(Graphics cg=Graphics.FromImage(c)) { PlainButton button=child as PlainButton; SwitchControl sw=child as SwitchControl; if(button!=null) button.PaintPreview(cg); else if(sw!=null) sw.PaintPreview(cg); else { Theme.ControlBackdrop(cg,child); using(Pen p=new Pen(Theme.Line)) cg.DrawRectangle(p,0,0,c.Width-1,c.Height-1); Theme.Write(cg,child.Text,6*scale,0,c.Width-12*scale,c.Height,UiTypography.Body*scale,Theme.Text,false,StringAlignment.Near); if(child==appearance || child==language || child==targetDisplay) Theme.Write(cg,"⌄",c.Width-22*scale,0,18*scale,c.Height,13*scale,Theme.Muted,false,StringAlignment.Center); } } GraphicsState childClip=g.Save();if(child.Parent==settingsBody) g.SetClip(settingsBody.Bounds,CombineMode.Intersect);g.DrawImageUnscaled(c,child.Left+(child.Parent==settingsBody?settingsBody.Left:0),child.Top+(child.Parent==settingsBody?settingsBody.Top:0));g.Restore(childClip); }
+                    using(Bitmap c=new Bitmap(child.Width,child.Height)) { using(Graphics cg=Graphics.FromImage(c)) { PlainButton button=child as PlainButton; SwitchControl sw=child as SwitchControl; if(button!=null) button.PaintPreview(cg); else if(sw!=null) sw.PaintPreview(cg); else { Theme.ControlBackdrop(cg,child); using(Pen p=new Pen(Theme.Line)) cg.DrawRectangle(p,0,0,c.Width-1,c.Height-1); Theme.Write(cg,child.Text,6*scale,0,c.Width-12*scale,c.Height,UiTypography.Body*scale,Theme.Text,false,StringAlignment.Near); if(child==target || child==appearance || child==language || child==targetDisplay) Theme.Write(cg,"⌄",c.Width-22*scale,0,18*scale,c.Height,13*scale,Theme.Muted,false,StringAlignment.Center); } } GraphicsState childClip=g.Save();if(child.Parent==settingsBody) g.SetClip(settingsBody.Bounds,CombineMode.Intersect);g.DrawImageUnscaled(c,child.Left+(child.Parent==settingsBody?settingsBody.Left:0),child.Top+(child.Parent==settingsBody?settingsBody.Top:0));g.Restore(childClip); }
                 }
             }
             return b;
@@ -627,7 +653,7 @@ namespace LoLMouseGuard
         {
             View v=new View { CanEnable=true,Status="已暂停" };
             if(kind=="waiting") { v.Enabled=true; v.Status="已启用，当前不约束"; }
-            if(kind=="protected") { v.Enabled=true; v.Status="保护中"; }
+            if(kind=="protected") { v.Enabled=true; v.Status="保护中"; v.ActiveExecutable="League of Legends.exe";v.ActivePid=100; }
             if(kind=="error") { v.CanEnable=false; v.Status="快捷键不可用，禁止启用"; }
             if(kind=="settings") v.Editing=true; return v;
         }
@@ -644,7 +670,7 @@ namespace LoLMouseGuard
                 string[] targetLabels={"league","short","long"};
                 for(int i=0;i<targets.Length;i++)
                 {
-                    View sample=State("paused");sample.Settings.TargetExecutable=targets[i];sample.Settings.TargetDisplay="name";
+                    View sample=State("protected");sample.Settings.TargetExecutable=targets[i];sample.ActiveExecutable=targets[i];sample.Settings.TargetDisplay="name";
                     using(ControlPanel form=new ControlPanel(new PreviewSession(sample),true,false)) using(Bitmap b=form.RenderPreview()) b.Save(Path.Combine(directory,"preview-name-"+targetLabels[i]+(dark?"-dark":"")+".png"),ImageFormat.Png);
                     using(FloatingBar bar=new FloatingBar(true)) {bar.Present(sample);using(Bitmap b=bar.PreviewBitmap(1)) b.Save(Path.Combine(directory,"preview-floating-name-"+targetLabels[i]+(dark?"-dark":"")+".png"),ImageFormat.Png);}
                 }
@@ -657,13 +683,13 @@ namespace LoLMouseGuard
                     {form.PreviewSettings();using(Bitmap b=form.RenderPreview(scale)) b.Save(Path.Combine(directory,"preview-settings-dpi"+percent+(dark?"-dark":"")+".png"),ImageFormat.Png);}
                     using(FloatingBar bar=new FloatingBar(true))
                     {bar.Present(State("protected"));using(Bitmap b=bar.PreviewBitmap(scale)) b.Save(Path.Combine(directory,"preview-floating-dpi"+percent+(dark?"-dark":"")+".png"),ImageFormat.Png);}
-                    View longName=State("waiting");longName.Settings.TargetDisplay="name";longName.Settings.TargetExecutable="AnExtremelyLongTargetProgramNameForLayoutVerification.exe";
+                    View longName=State("waiting");longName.Settings.TargetDisplay="name";longName.Settings.TargetExecutable="AnExtremelyLongTargetProgramNameForLayoutVerification.exe";longName.ActiveExecutable=longName.Settings.TargetExecutable;
                     using(ControlPanel form=new ControlPanel(new PreviewSession(longName),true,false))
                     using(Bitmap b=form.RenderPreview(scale)) b.Save(Path.Combine(directory,"preview-long-name-dpi"+percent+(dark?"-dark":"")+".png"),ImageFormat.Png);
                 }
                 foreach(float scale in new[] {1f,1.25f,1.5f,2f})
                 {
-                    string iconFile=typeof(Program).Assembly.Location;View own=State("paused");own.Settings.TargetExecutable=Path.GetFileName(iconFile);
+                    string iconFile=typeof(Program).Assembly.Location;View own=State("paused");own.Settings.TargetExecutable=Path.GetFileName(iconFile);own.ActiveExecutable=own.Settings.TargetExecutable;
                     using(ControlPanel form=new ControlPanel(new PreviewSession(own),true,false))
                     {using(Bitmap ignored=form.RenderPreview(scale)) {}form.PreviewUseIconFile(iconFile);using(Bitmap bitmap=form.RenderPreview()) bitmap.Save(Path.Combine(directory,"preview-file-icon-dpi"+(int)(scale*100)+(dark?"-dark":"")+".png"),ImageFormat.Png);}
                 }
@@ -681,4 +707,3 @@ namespace LoLMouseGuard
         }
     }
 }
-

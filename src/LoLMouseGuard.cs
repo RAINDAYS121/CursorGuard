@@ -1,6 +1,6 @@
 // SPDX-License-Identifier: GPL-3.0-only
 // Copyright (c) 2026 RAINDAYS121.
-// CursorGuard 1.2.4. Public Win32 APIs only; no hooks, injection or game memory.
+// CursorGuard 1.3.0. Public Win32 APIs only; no hooks, injection or game memory.
 using System;
 using System.Collections.Generic;
 using System.Collections.Concurrent;
@@ -13,8 +13,8 @@ using System.Threading;
 using System.Web.Script.Serialization;
 using System.Windows.Forms;
 
-[assembly: System.Reflection.AssemblyVersion("1.2.4.0")]
-[assembly: System.Reflection.AssemblyFileVersion("1.2.4.0")]
+[assembly: System.Reflection.AssemblyVersion("1.3.0.0")]
+[assembly: System.Reflection.AssemblyFileVersion("1.3.0.0")]
 [assembly: System.Reflection.AssemblyProduct("CursorGuard")]
 [assembly: System.Reflection.AssemblyCopyright("Copyright (c) 2026 RAINDAYS121")]
 
@@ -44,7 +44,8 @@ namespace LoLMouseGuard
         public IntPtr Window;
         public uint Pid;
         public string Executable;
-        public string TargetExecutable = "League of Legends.exe";
+        public IList<string> TargetExecutables = new List<string> { "League of Legends.exe" };
+        public string TargetExecutable { get { return TargetExecutables.Count == 0 ? "" : TargetExecutables[0]; } set { TargetExecutables = new List<string> { value }; } }
         public bool Visible, Minimized, CoordinatesReady, CursorReady;
         public Box Client, Monitor, VirtualScreen;
         public Position Cursor;
@@ -52,7 +53,7 @@ namespace LoLMouseGuard
         {
             target = new Box();
             if (Window == IntPtr.Zero || Pid == 0 || !Visible || Minimized || !CoordinatesReady || !CursorReady ||
-                !String.Equals(Executable, TargetExecutable, StringComparison.OrdinalIgnoreCase)) return false;
+                !TargetPrograms.Contains(TargetExecutables, Executable)) return false;
             target = Box.Intersect(Box.Intersect(Client, Monitor), VirtualScreen);
             // Ignore 1x1 rectangles observed during full-screen restoration/exit.
             return Client.Width >= 64 && Client.Height >= 64 && target.Width >= 64 && target.Height >= 64;
@@ -76,6 +77,7 @@ namespace LoLMouseGuard
         Box ownedBox, pendingBox;
         IntPtr pendingWindow;
         uint pendingPid;
+        string pendingExecutable;
         long stableSince;
         public bool Enabled { get { return enabled; } }
         public bool CanEnable { get { return hotkeysReady && dpiReady; } }
@@ -102,7 +104,7 @@ namespace LoLMouseGuard
             if (CanEnable) { Status = ok ? (emergency ? "紧急释放后已暂停" : "已暂停") : "释放失败，已暂停"; if (ok) Detail = "本工具不会再次加约束，直到手动启用。"; }
         }
         public void Stop() { enabled = false; ResetPending(); Release(false); Status = "已退出"; }
-        void ResetPending() { pendingWindow = IntPtr.Zero; pendingPid = 0; stableSince = 0; }
+        void ResetPending() { pendingWindow = IntPtr.Zero; pendingPid = 0; pendingExecutable = null; stableSince = 0; }
         bool Release(bool force)
         {
             if (!force && !ownsClip) return true;
@@ -120,15 +122,15 @@ namespace LoLMouseGuard
         {
             if (!enabled) { if (ownsClip) Release(false); return; }
             Box target;
-            if (!CanEnable || !s.TryTarget(out target))
+            if (!CanEnable || s == null || !s.TryTarget(out target))
             {
                 Release(false); ResetPending();
                 if (enabled) { Status = "已启用，当前不约束"; Detail = "等待目标窗口在前台且客户区有效；普通切屏会释放。"; }
                 return;
             }
-            if (pendingWindow != s.Window || pendingPid != s.Pid || !pendingBox.Equals(target))
+            if (pendingWindow != s.Window || pendingPid != s.Pid || !String.Equals(pendingExecutable, s.Executable, StringComparison.OrdinalIgnoreCase) || !pendingBox.Equals(target))
             {
-                Release(false); pendingWindow = s.Window; pendingPid = s.Pid; pendingBox = target; stableSince = now;
+                Release(false); pendingWindow = s.Window; pendingPid = s.Pid; pendingExecutable = s.Executable; pendingBox = target; stableSince = now;
             }
             if (!enabled) return;
             if (!target.Contains(s.Cursor))
@@ -195,7 +197,8 @@ namespace LoLMouseGuard
 
     sealed class WindowsBackend : ICursorBackend, IHotkeyBackend
     {
-        public string TargetExecutable = "League of Legends.exe";
+        public IList<string> TargetExecutables = new List<string> { "League of Legends.exe" };
+        public string TargetExecutable { get { return TargetExecutables.Count == 0 ? "" : TargetExecutables[0]; } set { TargetExecutables = new List<string> { value }; } }
         public bool ReadClip(out Box b) { return Native.GetClipCursor(out b); }
         public bool Free(out int error) { bool ok = Native.Unconfine(IntPtr.Zero); error = ok ? 0 : Marshal.GetLastWin32Error(); return ok; }
         public bool Register(int id, uint modifiers, uint key, out int error) { bool ok = Native.RegisterHotKey(IntPtr.Zero, id, 0x4000 | modifiers, key); error = ok ? 0 : Marshal.GetLastWin32Error(); return ok; }
@@ -209,11 +212,11 @@ namespace LoLMouseGuard
         }
         public Scene ReadScene()
         {
-            Scene s = new Scene(); s.TargetExecutable = TargetExecutable; s.Window = Native.GetForegroundWindow();
+            Scene s = new Scene(); s.TargetExecutables = new List<string>(TargetExecutables); s.Window = Native.GetForegroundWindow();
             if (s.Window == IntPtr.Zero) return s;
             Native.GetWindowThreadProcessId(s.Window, out s.Pid);
             s.Executable = Executable(s.Pid);
-            if (!String.Equals(s.Executable, TargetExecutable, StringComparison.OrdinalIgnoreCase)) return s;
+            if (!TargetPrograms.Contains(TargetExecutables, s.Executable)) return s;
             s.Visible = Native.IsWindowVisible(s.Window); s.Minimized = Native.IsIconic(s.Window);
             if (!s.Visible || s.Minimized) return s;
             Box local;
@@ -239,12 +242,13 @@ namespace LoLMouseGuard
         {
             error = 0;
             Scene latest = ReadScene(); Box currentTarget;
-            if (latest.Window != expected.Window || latest.Pid != expected.Pid || !latest.TryTarget(out currentTarget) ||
+            if (latest.Window != expected.Window || latest.Pid != expected.Pid || !String.Equals(latest.Executable, expected.Executable, StringComparison.OrdinalIgnoreCase) || !latest.TryTarget(out currentTarget) ||
                 !currentTarget.Equals(target) || !target.Contains(latest.Cursor)) return ApplyResult.Skipped;
             if (!Native.Confine(ref target)) { error = Marshal.GetLastWin32Error(); return ApplyResult.Failed; }
             // A foreground change can still race any public API call. Release on
             // immediate recheck; otherwise the next 20 ms poll notices it.
-            if (Native.GetForegroundWindow() != expected.Window || Native.IsIconic(expected.Window))
+            uint verifyPid;
+            if (Native.GetForegroundWindow() != expected.Window || Native.GetWindowThreadProcessId(expected.Window, out verifyPid) == 0 || verifyPid != expected.Pid || Native.IsIconic(expected.Window))
             {
                 Box now;
                 if (!ReadClip(out now) || now.Equals(target))
@@ -324,7 +328,7 @@ namespace LoLMouseGuard
             test("cursor_read_failure_fail_open", delegate { FakeBackend b = new FakeBackend(); GuardCore c = Ready(b); Active(c, Game()); Scene s = Game(); s.CursorReady = false; c.Step(s, 101); Assert(b.Frees == 1 && b.Applies == 1); });
             test("apply_focus_race_cleanup_failure_retains_ownership", delegate { FakeBackend b = new FakeBackend(); b.AppliedReleaseFailure = true; b.FailFree = true; GuardCore c = Ready(b); Active(c, Game()); Assert(!c.Enabled && c.OwnsClip && b.Applies == 1); b.FailFree = false; c.Step(new Scene(), 120); Assert(!c.OwnsClip && b.Frees == 2); });
             int failed = checks.FindAll(delegate(Check c) { return !c.passed; }).Count;
-            object report = new { version = "1.2.4", utc = DateTime.UtcNow.ToString("o"), mode = "simulation_only_no_native_input_or_clip_calls", passed = checks.Count - failed, failed = failed, tests = checks,
+            object report = new { version = "1.3.0", utc = DateTime.UtcNow.ToString("o"), mode = "simulation_only_no_native_input_or_clip_calls", passed = checks.Count - failed, failed = failed, tests = checks,
                 unverified = new[] { "Actual Windows hotkey availability/delivery", "Actual game/full-screen/DPI behavior", "Measured Alt+Tab release latency", "Forced termination/OS hangs", "Anti-cheat compatibility" } };
             File.WriteAllText(output, new JavaScriptSerializer().Serialize(report), new UTF8Encoding(false));
             return failed == 0 ? 0 : 1;
@@ -336,7 +340,9 @@ namespace LoLMouseGuard
         [STAThread]
         static int Main(string[] args)
         {
-            if (args.Length == 2 && args[0] == "--self-test") { string output = Path.GetFullPath(args[1]); int core = SelfTests.Run(output); int settings = SettingsTests.Append(output); int floating = FloatingTests.Append(output); int ui = Math.Max(Math.Max(UiRegressionTests.Append(output), ProgramIconTests.Append(output)),Math.Max(SettingsScrollTests.Append(output),Math.Max(LocalizationTests.Append(output),SettingsSessionTests.Append(output)))); return Math.Max(ui, Math.Max(core, Math.Max(settings, floating))); }
+            if (args.Length == 2 && args[0] == "--test-localization") { string output=Path.GetFullPath(args[1]); File.WriteAllText(output,new JavaScriptSerializer().Serialize(new {version="1.3.0",passed=0,failed=0,mode="focused_hidden_localization"}),new UTF8Encoding(false));return LocalizationTests.Append(output); }
+            if (args.Length == 2 && args[0] == "--test-targets") { string output=Path.GetFullPath(args[1]); int targets=MultipleTargetTests.Run(output); return Math.Max(targets,Math.Max(SettingsTests.Append(output),SettingsSessionTests.Append(output))); }
+            if (args.Length == 2 && args[0] == "--self-test") { string output = Path.GetFullPath(args[1]); int core = SelfTests.Run(output); int settings = SettingsTests.Append(output); int floating = FloatingTests.Append(output); int ui = Math.Max(Math.Max(UiRegressionTests.Append(output), ProgramIconTests.Append(output)),Math.Max(SettingsScrollTests.Append(output),Math.Max(LocalizationTests.Append(output),SettingsSessionTests.Append(output)))); int targets=MultipleTargetTests.Append(output); return Math.Max(targets,Math.Max(ui, Math.Max(core, Math.Max(settings, floating)))); }
             if (args.Length == 2 && (args[0] == "--render-preview" || args[0] == "--render-preview-en")) {UiText.SetLanguage(args[0]=="--render-preview-en"?"en":"zh-CN");return Previews.Render(Path.GetFullPath(args[1]));}
             if (args.Length == 2 && args[0] == "--native-render-probe") return NativeRenderProbe.Run(Path.GetFullPath(args[1]));
             if (args.Length == 3 && args[0] == "--render-review") return ReviewBoards.Render(Path.GetFullPath(args[1]),Path.GetFullPath(args[2]));
@@ -361,4 +367,3 @@ namespace LoLMouseGuard
         }
     }
 }
-
