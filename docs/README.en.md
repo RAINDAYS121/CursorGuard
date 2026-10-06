@@ -1,10 +1,12 @@
 # CursorGuard 1.3.0
 
+Local 1.3.1 update: startup restores the last explicit protection choice. Legacy configs first start paused; enable once to save. Settings suspension and focus loss preserve the choice; emergency/protection errors disarm it. Windows startup entries are unchanged, and the public release remains 1.3.0.
+
 [Quick guide](../README.en.md) · [Chinese](README.zh-CN.md) · [Build and test](../BUILDING.md) · [Validation limits](VALIDATION.md)
 
 A Windows 10/11 desktop utility that confines the cursor to the valid client area of a foreground program from your target list. League of Legends is included by default; add or remove games and applications, deduplicated by executable filename without case sensitivity. The capsule window and optional floating bar display the currently recognized active program and actual state. Without an eligible target, they show Auto detect and clear the previous program name and icon.
 
-Version 1.2.4 preserves the enable-switch intention when opening settings. Editing releases the cursor; Back or a successful Done restores the prior intention and waits for a fresh eligible foreground target and stable window. Explicit pause, emergency release, quit or a save error cancels restoration. Application and Windows startup still start paused.
+Version 1.2.4 preserves the enable-switch intention when opening settings. Editing releases the cursor; Back or a successful Done restores the prior intention and waits for a fresh eligible foreground target and stable window. Explicit pause, emergency release, quit or a save error cancels restoration. From 1.3.1, normal application and Windows startup restore the explicit protection choice; new and first-upgraded legacy configs stay paused.
 
 Target display offers Program icon or Program name for both main and floating bars, defaulting to icon. Real executable names stay unchanged; long names are ellipsized with the full filename in a tooltip. Protection-state text continues to report the actual state. Active icons are read from local executable resources using read-only queries for the actual foreground PID, never launching the target, and remain in memory only. Unavailable icons use a neutral application glyph. No icon-cache files are written. Missing legacy fields default to icon while retaining other settings.
 
@@ -15,7 +17,7 @@ Chinese labels use installed Microsoft YaHei UI; Latin text, digits and shortcut
 
 ## Getting started
 
-1. Extract the complete release ZIP to a stable folder and run `CursorGuard.exe`. Every launch starts **paused**, without elevation or driver installation.
+1. Extract the complete release ZIP to a stable folder and run `CursorGuard.exe`. New installs and first-upgraded legacy configs start **paused**; later launches restore the explicit choice, without elevation or driver installation.
 2. Choose Settings from the gear menu, or click the main program icon to enter program selection. Settings first pauses protection and attempts release. If an owned constraint cannot be released, editing is refused and emergency shortcuts stay registered.
 3. Use **+** next to the target list to append a running program with a visible window or an `.exe` file. Selecting a file never launches it. Type a filename and choose **Add typed program**, or save it with **Done**. Select an entry and use **−** to remove it; duplicate additions do not add another entry.
 4. Save with **Done**, or cancel with **Back**. The previously enabled intention is restored; a previously paused switch stays paused. Pause, emergency release, quit or an error cancels restoration.
@@ -58,7 +60,7 @@ These English previews are drawn by the application's actual English renderer us
 
 ## Startup and compatibility
 
-Startup is off by default. Opting in writes only the current user's `HKCU\Software\Microsoft\Windows\CurrentVersion\Run\LoLMouseGuard` value. Login launches quietly to the tray and still starts paused. Saving unrelated settings preserves an existing startup path. After moving the executable, explicitly disable startup and save, then enable it and save to update that path.
+Startup is off by default. Opting in writes only the current user's `HKCU\Software\Microsoft\Windows\CurrentVersion\Run\LoLMouseGuard` value. Login launches quietly to the tray. From 1.3.1 it restores the saved protection choice, with new/first-upgraded legacy configs still paused. Saving unrelated settings preserves an existing startup path. After moving the executable, explicitly disable startup and save, then enable it and save to update that path.
 
 Legacy paths and single-instance identity are retained: `%APPDATA%\LoLMouseGuard\settings.json` for shortcuts/target, and `floating.json` for interface preferences. A version-1 single target migrates to the version-2 TargetExecutables list, retaining shortcuts, startup and display mode. Reading never rewrites the file; a successful save persists the list. An absent old target defaults to League of Legends, but an explicit empty list remains empty. Existing language, appearance and floating preferences remain in their original file. Older applications cannot read version-2 target settings; avoid saving alternately with them. Invalid or unreadable configuration raises a warning and keeps protection paused. Exit an older running version normally before launching this one; do not overwrite its active folder.
 

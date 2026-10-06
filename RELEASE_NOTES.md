@@ -1,35 +1,31 @@
-# CursorGuard v1.3.0
+# CursorGuard v1.3.1
 
-Copyright (c) 2026 RAINDAYS121. GPL-3.0-only.
+Remember the last explicit protection-switch choice: enabled restores enabled;
+an explicit pause stays paused. New installs and legacy configurations missing
+ProtectionEnabled default to paused. After upgrading, enable once to save the
+choice. Normal exit keeps it; settings suspension and ordinary foreground loss
+do not overwrite it.
 
-Add multiple targets using + in Settings: select a visible running program,
-choose an EXE without launching it, or enter a filename. Use − to remove the
-selected entry. Names are deduplicated without case sensitivity.
+Restoration only arms the guard: ready hotkeys/DPI, a valid eligible foreground
+window, cursor inside and 100 ms stable identity/bounds are still required.
+Waiting is shown as waiting, not protected. Emergency release and protection
+faults disarm restart restoration. If a config write fails, the runtime stays
+paused and reports that a restart may retain the prior on-disk choice.
 
-Only the eligible actual foreground program from the list is protected.
-Switching executable, process, window or client bounds releases the old owned
-constraint and requires fresh valid bounds stable for 100 ms. Empty lists stay
-empty. Main/floating names and icons identify the active target; idle snapshots
-clear stale identity. Icons use read-only active-PID metadata and stay in memory.
+Targets, custom shortcuts, name/icon display and separate language/theme/status
+bar preferences remain supported. Windows startup entries are not changed.
+The existing verified GitHub release workflow publishes this version without expanding permissions.
 
-Single-target version-1 settings migrate to a version-2 list, retaining keys,
-startup and display mode. Loading does not rewrite the original file; a successful
-explicit save persists the list. Existing interface preferences are preserved.
-Older versions cannot read version-2 target settings.
+新增保护开关记忆，正常退出及开机恢复上次主动选择。旧配置第一次升级仍暂停，
+请开启一次保存。设置编辑和切屏不改意图；急停与保护异常优先，恢复仍经过前台、
+区域、鼠标位置和稳定性校验。未修改 Windows 自启项，公开发布状态以 GitHub Releases 为准。
 
-Settings enable intention, pause/emergency priority, 中文 / English, themes and
-icon/name display remain. Application and Windows login always start paused.
+Validation: 28 new intent cases and 16 existing focused regressions (44 total);
+214 full checks and an independent final-source-ZIP rebuild. Fake backends,
+isolated configuration fixtures and hidden/offscreen UI only. No live game,
+real global hotkeys/input/focus/DPI or anti-cheat validation.
 
-新增多程序列表，设置中“+”添加、“−”移除，按程序文件名去重。仅识别实际前台目标，
-切换后先释放旧区域并重新等待稳定。旧单程序配置迁移为列表，保留其他偏好；
-读取不改写文件，成功保存后才更新。界面显示真实活动程序，空闲时清除旧名称图标。
-
-Validation: 186 automatic regressions, including 36 new multiple-target cases,
-bilingual offscreen previews and an independent source-ZIP rebuild. Focused
-target/settings and localization checks precede the final full suite. Existing
-200% runner/window-size regressions and assertions remain. No live game, actual
-global hotkeys, physical focus/drag or anti-cheat compatibility validation.
-
-Assets: CursorGuard-1.3.0.zip, CursorGuard-1.3.0-source.zip, SHA256SUMS.txt.
-Extract into a new folder; exit an older copy normally before launching.
-Do not overwrite a running folder. Previous versions remain available.
+Files: CursorGuard-1.3.1.zip, CursorGuard-1.3.1-source.zip, SHA256SUMS.txt.
+Extract into a new folder; exit the old instance normally before opening this
+version. Keep the existing configured startup location in mind when installing;
+this task does not rewrite startup entries or replace the running executable.

@@ -346,7 +346,7 @@ namespace LoLMouseGuard
         protected override void OnActivated(EventArgs e) {base.OnActivated(e);SyncFrame();}
         void ShowDetails()
         {
-            UiDialogs.Show(this,"CursorGuard 1.3.0\n\n"+UiText.Display(view.Status)+"\n"+UiText.Display(view.Detail)+"\n"+UiText.Display(view.Notice)+"\n"+UiText.Display(floating.Warning)+"\n"+UiText.Display(frameWarning)+UiText.T("\n\n目标程序：")+String.Join(", ",view.Settings.TargetExecutables.ToArray())+UiText.T("\n紧急释放：")+view.Settings.Emergency.Display()+UiText.T("\n退出：")+view.Settings.Exit.Display()+UiText.T("\n\n悬浮条可拖动；从托盘显示、隐藏或重置。独占全屏下可能不可见。"),UiText.T("详情与帮助"),MessageBoxButtons.OK,MessageBoxIcon.Information);
+            UiDialogs.Show(this,"CursorGuard 1.3.1\n\n"+UiText.Display(view.Status)+"\n"+UiText.Display(view.Detail)+"\n"+UiText.Display(view.Notice)+"\n"+UiText.Display(floating.Warning)+"\n"+UiText.Display(frameWarning)+UiText.T("\n\n目标程序：")+String.Join(", ",view.Settings.TargetExecutables.ToArray())+UiText.T("\n紧急释放：")+view.Settings.Emergency.Display()+UiText.T("\n退出：")+view.Settings.Exit.Display()+UiText.T("\n\n悬浮条可拖动；从托盘显示、隐藏或重置。独占全屏下可能不可见。"),UiText.T("详情与帮助"),MessageBoxButtons.OK,MessageBoxIcon.Information);
         }
         void OpenSettings()
         {

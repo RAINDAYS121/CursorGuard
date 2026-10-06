@@ -1,0 +1,14 @@
+{
+  "version": "1.3.1",
+  "simulation_passed": 214,
+  "simulation_failed": 0,
+  "exe_sha256": "89AFA0C4DBBE0E4A821E2FBF44972A29CA8A011558BA3EECCC97B75A7257A8E2",
+  "mode": "simulation_and_offscreen_only",
+  "native_window_handle_created_in_tests": false,
+  "real_game_tested": false,
+  "real_drag_focus_tested": false,
+  "real_monitor_dpi_tested": false,
+  "anticheat_compatibility_confirmed": false,
+  "focused_intent_passed": 44,
+  "new_intent_cases": 28
+}

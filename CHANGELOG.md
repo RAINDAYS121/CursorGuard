@@ -1,5 +1,14 @@
 # Changelog
 
+## 1.3.1 — 2026-10-06 (local update)
+
+- Remember explicit protection enable/pause choice across normal exits and launches. New/legacy configurations without the field stay paused.
+- Settings suspension and ordinary focus/minimize changes do not change the saved choice. Restore still needs ready hotkeys/DPI, valid foreground bounds and 100 ms stability; waiting is not reported as protected.
+- Emergency, protection errors and failed settings completion disarm restoration. A failed persistence write keeps the runtime paused and warns that disk may retain its earlier choice. Normal exit releases constraints without changing the choice.
+- Preserve targets, custom shortcuts, display mode and independent language/theme preferences; no Windows startup configuration changes.
+- 28 new cases pass; full validation and independent final-source-ZIP rebuild pass 214. No remote upload/publication or live game/input test.
+- 记住用户主动选择的保护开关；首次升级默认暂停，需手动开启一次。设置临时暂停和切屏不覆盖意图，急停或异常优先；未修改自启项，未发布远端。
+
 ## 1.3.0 — 2026-10-04
 
 - Add/remove multiple executable targets through the running-program/EXE picker or manual entry; deduplicate without case sensitivity.

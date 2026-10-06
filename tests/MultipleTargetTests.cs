@@ -44,7 +44,7 @@ namespace LoLMouseGuard
         }
         public static int Run(string output)
         {
-            File.WriteAllText(output,new JavaScriptSerializer().Serialize(new {version="1.3.0",passed=0,failed=0,mode="focused_fake_targets_and_hidden_ui"}),new UTF8Encoding(false));
+            File.WriteAllText(output,new JavaScriptSerializer().Serialize(new {version="1.3.1",passed=0,failed=0,mode="focused_fake_targets_and_hidden_ui"}),new UTF8Encoding(false));
             return Append(output);
         }
         public static int Append(string output)

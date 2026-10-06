@@ -35,6 +35,7 @@ namespace LoLMouseGuard
         public Shortcut Emergency = new Shortcut(3, 0x78);
         public Shortcut Exit = new Shortcut(3, 0x79);
         public bool StartWithWindows;
+        public bool ProtectionEnabled; // Last explicit user choice; absent legacy field stays false.
         public List<string> TargetExecutables = new List<string> { "League of Legends.exe" };
         // Legacy source compatibility only. Persistence uses the list exclusively.
         [ScriptIgnore]
@@ -49,7 +50,7 @@ namespace LoLMouseGuard
         { TargetExecutables = TargetPrograms.Normalize(names); }
         public string TargetDisplay = "icon";
         public static Settings Defaults() { return new Settings(); }
-        public Settings Copy() { return new Settings { Version = Version, Toggle = Toggle == null ? null : Toggle.Copy(), Emergency = Emergency == null ? null : Emergency.Copy(), Exit = Exit == null ? null : Exit.Copy(), StartWithWindows = StartWithWindows, TargetExecutables = TargetExecutables == null ? null : new List<string>(TargetExecutables), TargetDisplay = TargetDisplay }; }
+        public Settings Copy() { return new Settings { Version = Version, Toggle = Toggle == null ? null : Toggle.Copy(), Emergency = Emergency == null ? null : Emergency.Copy(), Exit = Exit == null ? null : Exit.Copy(), StartWithWindows = StartWithWindows, ProtectionEnabled = ProtectionEnabled, TargetExecutables = TargetExecutables == null ? null : new List<string>(TargetExecutables), TargetDisplay = TargetDisplay }; }
         [ScriptIgnore]
         public Shortcut[] Keys { get { return new[] { Toggle, Emergency, Exit }; } }
         public string Validate()
@@ -113,6 +114,7 @@ namespace LoLMouseGuard
                 JavaScriptSerializer serializer = new JavaScriptSerializer();
                 var fields = serializer.Deserialize<Dictionary<string, object>>(data);
                 if (fields == null || !fields.ContainsKey("Toggle") || !fields.ContainsKey("Emergency") || !fields.ContainsKey("Exit") || !fields.ContainsKey("StartWithWindows")) throw new FormatException();
+                if (fields.ContainsKey("ProtectionEnabled") && !(fields["ProtectionEnabled"] is bool)) throw new FormatException();
                 Settings result = serializer.Deserialize<Settings>(data);
                 if (result == null || (result.Version != 1 && result.Version != 2)) throw new FormatException();
                 if (fields.ContainsKey("TargetExecutables"))
@@ -217,7 +219,7 @@ namespace LoLMouseGuard
                 store.Save(candidate);
                 if (active != null) active.Dispose();
                 active = next; Current = candidate.Copy(); Ready = true;
-                message = "设置已保存。自启登录仍默认暂停。"; return true;
+                message = "设置已保存。启动时恢复上次主动选择的保护开关。"; return true;
             }
             catch (Exception e)
             {
@@ -229,6 +231,18 @@ namespace LoLMouseGuard
                 }
                 string oldKeyError; bool restored = RegisterCurrent(out oldKeyError);
                 message = "设置保存失败：" + UiText.ExceptionMessage(e) + (restored ? " 已恢复原快捷键，保护保持暂停。" : " 原快捷键恢复失败，禁止启用：" + oldKeyError) + rollback;
+                return false;
+            }
+        }
+        public bool SaveProtectionIntent(bool wanted, out string message)
+        {
+            message = null;
+            if (Current.ProtectionEnabled == wanted) return true;
+            Settings candidate = Current.Copy(); candidate.ProtectionEnabled = wanted;
+            try { store.Save(candidate); Current = candidate; return true; }
+            catch (Exception)
+            {
+                message = "保护开关未能保存，当前已暂停；重启后可能保留之前的开关，请检查配置文件写入权限。";
                 return false;
             }
         }

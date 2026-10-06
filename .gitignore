@@ -33,3 +33,5 @@ docs/NATIVE-VERIFICATION-*.json
 ci-rebuild/
 
 artifacts/
+
+/intent-focused.json
